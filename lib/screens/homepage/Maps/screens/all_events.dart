@@ -1,8 +1,8 @@
+import 'package:apoorv_app/utils/models/feed.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../../../../constants.dart';
-import '../../../../../../utils/Models/Feed.dart';
-import '../components/marker_dialogs.dart';
+// import '../../../../../../utils/Models/Feed.dart';
 import 'event_details.dart';
 
 class AllEventsScreen extends StatefulWidget {

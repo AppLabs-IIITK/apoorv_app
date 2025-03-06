@@ -1,13 +1,13 @@
+import 'package:apoorv_app/utils/models/feed.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:async';
 import '../../../../../constants.dart';
-import '../../../../../utils/Models/Feed.dart';
+// import '../../../../../utils/Models/Feed.dart';
 import 'services/supabase_service.dart';
 import 'components/map_markers.dart';
 import 'components/academic_block_markers.dart';
-import 'components/marker_dialogs.dart';
 import 'services/map_cache_service.dart';
 import 'screens/event_details.dart';
 import 'screens/all_events.dart';

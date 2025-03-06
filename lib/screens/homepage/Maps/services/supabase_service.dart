@@ -1,7 +1,8 @@
 import 'dart:io';
+import 'package:apoorv_app/utils/models/feed.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../../../utils/Models/Feed.dart';
+// import '../../../../../../utils/Models/Feed.dart';
 import 'marker_cache_service.dart';
 
 class SupabaseService {

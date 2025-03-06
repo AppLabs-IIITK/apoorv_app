@@ -1,9 +1,10 @@
 import 'package:apoorv_app/screens/homepage/Maps/services/supabase_service.dart';
+import 'package:apoorv_app/utils/models/feed.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../../../../constants.dart';
-import '../../../../../../utils/Models/Feed.dart';
+// import '../../../../../../utils/Models/Feed.dart';
 import 'color_picker_dialog.dart';
 
 class MarkerDialogs {

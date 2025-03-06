@@ -1,7 +1,8 @@
+import 'package:apoorv_app/utils/models/feed.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import '../../../../../../constants.dart';
-import '../../../../../../utils/Models/Feed.dart';
+// import '../../../../../../utils/Models/Feed.dart';
 import 'marker_dialogs.dart';
 
 class MapMarkerLayer extends StatelessWidget {

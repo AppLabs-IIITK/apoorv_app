@@ -1,6 +1,7 @@
+import 'package:apoorv_app/utils/models/feed.dart';
 import 'package:flutter/material.dart';
 import '../../../../../../constants.dart';
-import '../../../../../../utils/Models/Feed.dart';
+// import '../../../../../../utils/Models/Feed.dart';
 import '../components/marker_dialogs.dart';
 
 class EventDetailsScreen extends StatelessWidget {

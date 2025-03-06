@@ -118,6 +118,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                             color: Constants.blackColor,
                                             fontSize: 36,
                                             fontWeight: FontWeight.bold,
+                                            fontFamily: 'GOT'
                                           ),
                                           softWrap: true,
                                         ),
