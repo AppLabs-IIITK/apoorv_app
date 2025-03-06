@@ -1,9 +1,10 @@
 import 'package:apoorv_app/constants.dart';
 import 'package:apoorv_app/providers/shopkeeper_provider.dart';
-import 'package:apoorv_app/screens/homepage/Maps/maps_full_view.dart';
+import 'package:apoorv_app/screens/homepage/Maps/maps.dart';
 import 'package:apoorv_app/shopkeeper/shopkeeper_homepage.dart';
 import 'package:apoorv_app/shopkeeper/shopkeeper_points_screen.dart';
 import 'package:apoorv_app/shopkeeper/shopkeeper_profile_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'base_client.dart';
 import 'providers/receiver_provider.dart';
@@ -29,8 +30,12 @@ import 'package:flutter/services.dart';
 
 import 'screens/homepage/points/leaderboard.dart';
 
+const supabaseUrl = 'https://ttmoltlyckvmfvntgetz.supabase.co';
+const supabaseKey =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0bW9sdGx5Y2t2bWZ2bnRnZXR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc5NzE4OTcsImV4cCI6MjA1MzU0Nzg5N30.26ji5DOeeJkZkZvUdLuI3FoNAVGDLsuEe1boWSiucWY";
+
 Future<void> main() async {
-  await DotEnv().load(fileName: '.env');
+  await dotenv.load(fileName: '.env');
 
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -47,6 +52,7 @@ Future<void> main() async {
   //     print('User is signed in!');
   //   }
   // });
+  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
 
   runApp(const MyApp());
 }
@@ -89,14 +95,14 @@ class MyApp extends StatelessWidget {
           ),
           textButtonTheme: TextButtonThemeData(
             style: ButtonStyle(
-              foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
+              foregroundColor: WidgetStateProperty.all<Color>(Colors.white),
             ),
           ),
           filledButtonTheme: FilledButtonThemeData(
             style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.resolveWith<Color>(
-                (Set<MaterialState> states) {
-                  if (states.contains(MaterialState.disabled)) {
+              backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                (Set<WidgetState> states) {
+                  if (states.contains(WidgetState.disabled)) {
                     return const Color(0xff494949);
                   } else {
                     return Constants.redColor;
@@ -104,15 +110,15 @@ class MyApp extends StatelessWidget {
                 },
               ),
               foregroundColor:
-                  MaterialStateProperty.all<Color>(Constants.whiteColor),
+                  WidgetStateProperty.all<Color>(Constants.whiteColor),
             ),
           ),
           elevatedButtonTheme: ElevatedButtonThemeData(
             style: ButtonStyle(
               backgroundColor:
-                  MaterialStateProperty.all<Color>(Constants.redColor),
+                  WidgetStateProperty.all<Color>(Constants.redColor),
               foregroundColor:
-                  MaterialStateProperty.all<Color>(Constants.whiteColor),
+                  WidgetStateProperty.all<Color>(Constants.whiteColor),
             ),
           ),
           floatingActionButtonTheme: const FloatingActionButtonThemeData(
@@ -133,7 +139,7 @@ class MyApp extends StatelessWidget {
           WelcomeScreen.routeName: (context) => const WelcomeScreen(),
           SignUpScreen.routeName: (context) => const SignUpScreen(),
           HomePage.routeName: (context) => const HomePage(),
-          MapsFullView.routeName: (context) => const MapsFullView(),
+          MapsScreen.routeName: (context) => const MapsScreen(),
           PointsScreen.routeName: (context) => const PointsScreen(),
           Profile2Screen.routeName: (context) => const Profile2Screen(),
           Leaderboard.routeName: (context) => const Leaderboard(),

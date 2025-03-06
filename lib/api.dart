@@ -5,10 +5,8 @@ import 'package:dio/dio.dart';
 import 'base_client.dart';
 
 class APICalls {
-  Future<Map<String, dynamic>> getUserDataAPI(
-    String uid,
-    String idToken,
-  ) async {
+  Future<Map<String, dynamic>> getUserDataAPI(String uid, String idToken,
+      {Map<String, dynamic>? args}) async {
     Map<String, dynamic> payload = {};
     try {
       var response = await BaseClient.dio.get(

@@ -48,6 +48,14 @@ dependencies:
   custom_refresh_indicator: ^3.0.0
   flutter_animate: ^4.5.0
   firebase_messaging: ^14.7.19
+  latlong2: ^0.9.1
+  flutter_map: ^6.1.0
+  image_picker: ^1.0.7
+  flutter_cache_manager: ^3.3.1
+  cached_network_image: ^3.3.1
+  supabase: ^2.6.3
+  supabase_flutter: ^2.8.4
+  flutter_colorpicker: ^1.0.3
 
 dev_dependencies:
   flutter_test:
