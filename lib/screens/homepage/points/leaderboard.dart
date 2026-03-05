@@ -23,7 +23,14 @@ class Leaderboard extends StatefulWidget {
 }
 
 class _LeaderboardState extends State<Leaderboard> {
-  Future<Map<String, dynamic>>? _myFuture;
+  final ScrollController _scrollController = ScrollController();
+
+  final List<Map<String, dynamic>> _users = [];
+  DocumentSnapshot<Map<String, dynamic>>? _lastDocument;
+  bool _hasMore = true;
+  bool _isLoadingInitial = true;
+  bool _isLoadingMore = false;
+  String? _error;
 
   Future<void> _seedLeaderboardAndTransactions() async {
     try {
@@ -131,7 +138,7 @@ class _LeaderboardState extends State<Leaderboard> {
 
       if (!mounted) return;
       showSnackbarOnScreen(context, 'Seeded $seedUserCount users + $txnCount txns');
-      await getLeaderboardUpdates();
+      await _refresh();
     } catch (e) {
       if (!mounted) return;
       showSnackbarOnScreen(context, 'Seeding failed: $e');
@@ -141,184 +148,268 @@ class _LeaderboardState extends State<Leaderboard> {
   @override
   void initState() {
     super.initState();
-    getLeaderboardUpdates();
+
+    _scrollController.addListener(() {
+      if (!_hasMore || _isLoadingMore || _isLoadingInitial) return;
+      if (!_scrollController.hasClients) return;
+
+      final pos = _scrollController.position;
+      // Load next page when close to bottom.
+      if (pos.pixels >= pos.maxScrollExtent - 300) {
+        _fetchMore();
+      }
+    });
+
+    _refresh();
   }
 
-  Future<void> getLeaderboardUpdates() async {
-    await Future.delayed(
-      const Duration(seconds: 2),
-      () {
-        var s = "";
-      },
-    );
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _refresh() async {
     setState(() {
-      _myFuture =
-          APICalls().getLeaderboard(context.read<UserProvider>().idToken);
+      _error = null;
+      _users.clear();
+      _lastDocument = null;
+      _hasMore = true;
+      _isLoadingInitial = true;
     });
+
+    final page = await APICalls().getLeaderboardPage(limit: 20);
+    if (!mounted) return;
+
+    if (page['success'] == true) {
+      setState(() {
+        _users.addAll((page['results'] as List).cast<Map<String, dynamic>>());
+        _lastDocument = page['lastDocument'] as DocumentSnapshot<Map<String, dynamic>>?;
+        _hasMore = (page['hasMore'] as bool?) ?? false;
+        _isLoadingInitial = false;
+      });
+    } else {
+      setState(() {
+        _error = (page['error'] ?? 'Failed to fetch leaderboard').toString();
+        _isLoadingInitial = false;
+      });
+    }
+  }
+
+  Future<void> _fetchMore() async {
+    if (!_hasMore || _isLoadingMore) return;
+    setState(() {
+      _isLoadingMore = true;
+      _error = null;
+    });
+
+    final page = await APICalls().getLeaderboardPage(
+      lastDocument: _lastDocument,
+      limit: 20,
+    );
+
+    if (!mounted) return;
+
+    if (page['success'] == true) {
+      setState(() {
+        _users.addAll((page['results'] as List).cast<Map<String, dynamic>>());
+        _lastDocument = page['lastDocument'] as DocumentSnapshot<Map<String, dynamic>>?;
+        _hasMore = (page['hasMore'] as bool?) ?? false;
+        _isLoadingMore = false;
+      });
+    } else {
+      setState(() {
+        _error = (page['error'] ?? 'Failed to fetch more').toString();
+        _isLoadingMore = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-        future: _myFuture,
-        builder: (BuildContext context, AsyncSnapshot snapshot) {
-          switch (snapshot.connectionState) {
-            case ConnectionState.waiting:
-              return const Scaffold(
-                body: Center(
-                  child: SpinningApoorv(),
-                ),
-              );
+    final providerContext = context.read<UserProvider>();
 
-            case ConnectionState.done:
-            default:
-              if (snapshot.hasError) {
-                return Scaffold(
-                  body: Center(child: Text(snapshot.error.toString())),
-                );
-              } else if (snapshot.hasData) {
-                // print(snapshot.data);
-                if (snapshot.data['success']) {
-                  var providerContext = context.read<UserProvider>();
+    if (_users.length == 1) {
+      Future.delayed(
+          Duration.zero,
+          () => showSnackbarOnScreen(
+              context, "Looks like you are the only one here!"));
+    }
+    if (_users.isNotEmpty && _users[0]['uid'] == providerContext.uid) {
+      Future.delayed(
+          Duration.zero,
+          () => showSnackbarOnScreen(
+              context, "Congrats, you are the top of the board"));
+    }
 
-                  var data = snapshot.data['results'] as List;
-
-                  if (data.length == 1) {
-                    Future.delayed(
-                        Duration.zero,
-                        () => showSnackbarOnScreen(
-                            context, "Looks like you are the only one here!"));
-                  }
-                  if (data[0]['uid'] == providerContext.uid) {
-                    Future.delayed(
-                        Duration.zero,
-                        () => showSnackbarOnScreen(
-                            context, "Congrats, you are the top of the board"));
-                  }
-
-                  return Scaffold(
-                    backgroundColor: const Color.fromRGBO(18, 18, 18, 1),
-                    floatingActionButton: kDebugMode
-                        ? FloatingActionButton.small(
-                            onPressed: () => _seedLeaderboardAndTransactions(),
-                            child: const Icon(Icons.casino_rounded),
-                          )
-                        : null,
-                    body: CustomMaterialIndicator(
-                      indicatorBuilder: (context, controller) =>
-                          Image.asset("assets/images/phoenix_74.png"),
-                      onRefresh: () => getLeaderboardUpdates(),
-                      child: SingleChildScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        child: SizedBox(
-                          height: MediaQuery.of(context).size.height,
-                          child: SafeArea(
-                              child: Column(
-                            children: [
-                              Container(
-                                decoration: const BoxDecoration(
-                                  borderRadius: BorderRadius.only(
-                                    bottomRight: Radius.circular(20),
-                                    bottomLeft: Radius.circular(20),
-                                  ),
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Constants.gradientHigh,
-                                      Constants.gradientMid,
-                                    ],
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                  ),
-                                ),
-                                padding: const EdgeInsets.all(20.0),
-                                width: MediaQuery.of(context).size.width,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    InkWell(
-                                      child: const Icon(
-                                        Icons.arrow_back_outlined,
-                                        size: 30,
-                                        color: Colors.black,
-                                      ),
-                                      onTap: () {
-                                        Navigator.pop(context);
-                                      },
-                                    ),
-                                    const Text(
-                                      "Leaderboard",
-                                      style: TextStyle(
-                                        color: Colors.black,
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    Constants.gap,
-                                    const Text(
-                                      "The leaderboard will be displayed until the auction starts",
-                                      style: TextStyle(
-                                          color: Colors.black,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600),
-                                    ),
-                                    const Text(
-                                      "Please refresh the page to update the leaderboard",
-                                      style: TextStyle(
-                                        color: Colors.black,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(
-                                height: 20,
-                              ),
-                              if (data.isEmpty)
-                                const Center(child: Text("No winner's yet")),
-                              Center(
-                                  child: Winner(
-                                image: data[0]['profileImage'],
-                                name: data[0]['fullName'],
-                                points: data[0]['points'],
-                                uid: data[0]['uid'],
-                                email: data[0]['email'],
-                              )),
-                              Expanded(
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal:
-                                        MediaQuery.of(context).size.width *
-                                            0.03,
-                                  ),
-                                  child: ListView.builder(
-                                    itemBuilder: (context, i) =>
-                                        LeaderboardCard(
-                                      name: data[i + 1]['fullName'],
-                                      image: data[i + 1]['profileImage'],
-                                      points: data[i + 1]['points'],
-                                      rank: i + 2,
-                                      uid: data[i + 1]['uid'],
-                                      email: data[i + 1]['email'],
-                                    ),
-                                    itemCount: data.length - 1,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )),
+    return Scaffold(
+      backgroundColor: const Color.fromRGBO(18, 18, 18, 1),
+      floatingActionButton: kDebugMode
+          ? FloatingActionButton.small(
+              heroTag: null,
+              onPressed: () => _seedLeaderboardAndTransactions(),
+              child: const Icon(Icons.casino_rounded),
+            )
+          : null,
+      body: CustomMaterialIndicator(
+        indicatorBuilder: (context, controller) =>
+            Image.asset("assets/images/phoenix_74.png"),
+        onRefresh: () => _refresh(),
+        child: SafeArea(
+          child: CustomScrollView(
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                      bottomRight: Radius.circular(20),
+                      bottomLeft: Radius.circular(20),
+                    ),
+                    gradient: LinearGradient(
+                      colors: [
+                        Constants.gradientHigh,
+                        Constants.gradientMid,
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                  ),
+                  padding: const EdgeInsets.all(20.0),
+                  width: MediaQuery.of(context).size.width,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      InkWell(
+                        child: const Icon(
+                          Icons.arrow_back_outlined,
+                          size: 30,
+                          color: Colors.black,
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                      ),
+                      const Text(
+                        "Leaderboard",
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
+                      Constants.gap,
+                      const Text(
+                        "The leaderboard will be displayed until the auction starts",
+                        style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600),
+                      ),
+                      const Text(
+                        "Pull to refresh to update the leaderboard",
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              if (_isLoadingInitial)
+                const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: SpinningApoorv(),
+                  ),
+                )
+              else if (_error != null)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Text(
+                      _error!,
+                      style: const TextStyle(color: Colors.white),
+                      textAlign: TextAlign.center,
                     ),
-                  );
-                } else {
-                  return Center(child: Text(snapshot.data['message']));
-                }
-              } else {
-                return const Scaffold(body: Center(child: SpinningApoorv()));
-              }
-          }
-        });
+                  ),
+                )
+              else ...[
+                const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                if (_users.isEmpty)
+                  const SliverToBoxAdapter(
+                    child: Center(
+                      child: Text(
+                        "No winner's yet",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  )
+                else ...[
+                  SliverToBoxAdapter(
+                    child: Center(
+                      child: Winner(
+                        image: _users[0]['profileImage'],
+                        name: _users[0]['fullName'],
+                        points: _users[0]['points'],
+                        uid: _users[0]['uid'],
+                        email: _users[0]['email'],
+                      ),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 10)),
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: MediaQuery.of(context).size.width * 0.03,
+                    ),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, i) {
+                          final idx = i + 1;
+                          final u = _users[idx];
+                          return LeaderboardCard(
+                            name: u['fullName'],
+                            image: u['profileImage'],
+                            points: u['points'],
+                            rank: idx + 1,
+                            uid: u['uid'],
+                            email: u['email'],
+                          );
+                        },
+                        childCount: (_users.length > 1) ? (_users.length - 1) : 0,
+                      ),
+                    ),
+                  ),
+                ],
+
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Center(
+                      child: _isLoadingMore
+                          ? const SizedBox(
+                              height: 32,
+                              width: 32,
+                              child: CircularProgressIndicator(),
+                            )
+                          : (!_hasMore
+                              ? const Text(
+                                  'End of leaderboard',
+                                  style: TextStyle(color: Colors.white70),
+                                )
+                              : const SizedBox.shrink()),
+                    ),
+                  ),
+                ),
+              ]
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -89,6 +89,7 @@ class _Profile2ScreenState extends State<Profile2Screen> {
 
                   return Scaffold(
                     floatingActionButton: FloatingActionButton(
+                      heroTag: null,
                       onPressed: () => _updateProfileData(),
                       child: const Icon(Icons.refresh_rounded),
                     ),

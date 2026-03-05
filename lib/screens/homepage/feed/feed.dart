@@ -75,6 +75,7 @@ class _FeedScreenState extends State<FeedScreen> {
                   var data = snapshot.data['body'] as List;
                   return Scaffold(
                     floatingActionButton: FloatingActionButton(
+                      heroTag: null,
                       onPressed: () => _updateFeedData(),
                       child: const Icon(Icons.refresh_rounded),
                     ),

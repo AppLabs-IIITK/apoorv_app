@@ -118,7 +118,7 @@ class APICalls {
     String uid,
   ) async {
     try {
-      final page = await getUserTransactionsPage(limit: 30);
+      final page = await getUserTransactionsPage(limit: 20);
       if (page['success'] == true) {
         return {
           'success': true,
@@ -141,7 +141,7 @@ class APICalls {
 
   Future<Map<String, dynamic>> getUserTransactionsPage({
     DocumentSnapshot<Map<String, dynamic>>? lastDocument,
-    int limit = 30,
+    int limit = 20,
   }) async {
     try {
       final email =
@@ -271,13 +271,23 @@ class APICalls {
     }
   }
 
-  Future<Map<String, dynamic>> getLeaderboard(String idToken) async {
+  Future<Map<String, dynamic>> getLeaderboardPage({
+    DocumentSnapshot<Map<String, dynamic>>? lastDocument,
+    int limit = 20,
+  }) async {
     try {
-      final snap = await FirebaseFirestore.instance
+      Query<Map<String, dynamic>> query = FirebaseFirestore.instance
           .collection('users')
           .orderBy('points', descending: true)
-          .limit(50)
-          .get();
+          // Tie-breaker for stable pagination when points are equal.
+          .orderBy('uid')
+          .limit(limit);
+
+      if (lastDocument != null) {
+        query = query.startAfterDocument(lastDocument);
+      }
+
+      final snap = await query.get();
 
       final results = snap.docs.map((d) {
         final u = d.data();
@@ -299,7 +309,9 @@ class APICalls {
       return {
         'success': true,
         'results': results,
-        'message': 'User data updated for leaderboard',
+        'lastDocument': snap.docs.isNotEmpty ? snap.docs.last : null,
+        'hasMore': snap.docs.length >= limit,
+        'message': 'Leaderboard page fetched',
       };
     } catch (e) {
       return {

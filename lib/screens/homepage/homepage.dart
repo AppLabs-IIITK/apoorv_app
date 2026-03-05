@@ -17,12 +17,21 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int currentPageIndex = 0;
 
+  late final List<Widget> screens;
+
   bool popStatus = true;
   int popCount = 0;
 
   @override
   void initState() {
     super.initState();
+    // Build once and keep tab state alive across tab switches.
+    screens = [
+      const FeedScreen(),
+      const MapsScreen(),
+      PointsScreen(stream: st.stream),
+      const Profile2Screen(),
+    ];
     popScreen(context);
   }
 
@@ -42,12 +51,6 @@ class _HomePageState extends State<HomePage> {
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
-  List screens = [
-    () => const FeedScreen(),
-    () => const MapsScreen(),
-    () => PointsScreen(stream: st.stream),
-    () => const Profile2Screen(),
-  ];
   @override
   Widget build(BuildContext context) {
     // BaseClient.printAuthTokenForTest();
@@ -67,7 +70,10 @@ class _HomePageState extends State<HomePage> {
       },
       child: Scaffold(
         resizeToAvoidBottomInset: false,
-        body: screens[currentPageIndex](),
+        body: IndexedStack(
+          index: currentPageIndex,
+          children: screens,
+        ),
         bottomNavigationBar: NavigationBar(
           onDestinationSelected: (int index) {
             setState(() {

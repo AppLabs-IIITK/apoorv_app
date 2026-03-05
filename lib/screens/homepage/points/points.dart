@@ -371,6 +371,7 @@ class _PointsScreenState extends State<PointsScreen> {
                     child: Scaffold(
                       resizeToAvoidBottomInset: false,
                       floatingActionButton: FloatingActionButton(
+                        heroTag: null,
                         onPressed: () => getTransactionHistory(),
                         child: const Icon(Icons.refresh_rounded),
                       ),

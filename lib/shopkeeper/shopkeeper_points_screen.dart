@@ -81,6 +81,7 @@ class _ShopkeeperPointsScreenState extends State<ShopkeeperPointsScreen> {
                   return Scaffold(
                     resizeToAvoidBottomInset: false,
                     floatingActionButton: FloatingActionButton(
+                      heroTag: null,
                       onPressed: () => getTransactionHistory(),
                       child: const Icon(Icons.refresh_rounded),
                     ),
