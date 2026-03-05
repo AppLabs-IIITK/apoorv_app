@@ -62,11 +62,13 @@ class _Profile2ScreenState extends State<Profile2Screen> {
 
                 Future.delayed(
                     const Duration(seconds: 1),
-                    () =>
-                        dialogBuilder(context, message: message, function: () {
-                          _updateProfileData();
-                          Navigator.of(context).pop();
-                        }));
+                    () {
+                      if (!context.mounted) return;
+                      dialogBuilder(context, message: message, function: () {
+                        _updateProfileData();
+                        Navigator.of(context).pop();
+                      });
+                    });
 
                 return const Scaffold(body: Center(child: SpinningApoorv()));
               } else if (snapshot.hasData) {
@@ -75,11 +77,14 @@ class _Profile2ScreenState extends State<Profile2Screen> {
 
                   Future.delayed(
                       const Duration(seconds: 1),
-                      () => dialogBuilder(context, message: message,
-                              function: () {
-                            _updateProfileData();
-                            Navigator.of(context).pop();
-                          }));
+                      () {
+                        if (!context.mounted) return;
+                        dialogBuilder(context, message: message,
+                                function: () {
+                          _updateProfileData();
+                          Navigator.of(context).pop();
+                        });
+                      });
 
                   return const Scaffold(body: Center(child: SpinningApoorv()));
                 }

@@ -232,14 +232,20 @@ class _LeaderboardState extends State<Leaderboard> {
     if (_users.length == 1) {
       Future.delayed(
           Duration.zero,
-          () => showSnackbarOnScreen(
-              context, "Looks like you are the only one here!"));
+          () {
+            if (!context.mounted) return;
+            showSnackbarOnScreen(
+                context, "Looks like you are the only one here!");
+          });
     }
     if (_users.isNotEmpty && _users[0]['uid'] == providerContext.uid) {
       Future.delayed(
           Duration.zero,
-          () => showSnackbarOnScreen(
-              context, "Congrats, you are the top of the board"));
+          () {
+            if (!context.mounted) return;
+            showSnackbarOnScreen(
+                context, "Congrats, you are the top of the board");
+          });
     }
 
     return Scaffold(

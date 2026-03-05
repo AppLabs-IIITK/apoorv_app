@@ -276,8 +276,11 @@ class _PaymentState extends State<Payment> {
               } else {
                 Future.delayed(
                   Duration.zero,
-                  () => showSnackbarOnScreen(
-                      context, snapshot.data['message'] + 'in else'),
+                  () {
+                    if (!context.mounted) return;
+                    showSnackbarOnScreen(
+                        context, snapshot.data['message'] + 'in else');
+                  },
                 );
                 return Center(child: Text(snapshot.data['message']));
               }

@@ -21,7 +21,7 @@ class ShopkeeperPointsScreen extends StatefulWidget {
 }
 
 class _ShopkeeperPointsScreenState extends State<ShopkeeperPointsScreen> {
-  var myFuture;
+  Future<Map<String, dynamic>>? myFuture;
   @override
   void initState() {
     super.initState();
@@ -66,11 +66,13 @@ class _ShopkeeperPointsScreenState extends State<ShopkeeperPointsScreen> {
 
                 Future.delayed(
                     const Duration(seconds: 1),
-                    () =>
-                        dialogBuilder(context, message: message, function: () {
-                          getTransactionHistory();
-                          Navigator.of(context).pop();
-                        }));
+                    () {
+                      if (!context.mounted) return;
+                      dialogBuilder(context, message: message, function: () {
+                        getTransactionHistory();
+                        Navigator.of(context).pop();
+                      });
+                    });
 
                 return const Scaffold(body: Center(child: SpinningApoorv()));
               } else if (snapshot.hasData) {

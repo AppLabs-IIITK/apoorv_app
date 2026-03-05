@@ -8,6 +8,7 @@ class LoadingScreen extends StatelessWidget {
 
   void delayLoad(BuildContext context) {
     Future.delayed(Durations.extralong4, () {
+      if (!context.mounted) return;
       Navigator.of(context).pushReplacementNamed(Routing.routeName);
     });
   }

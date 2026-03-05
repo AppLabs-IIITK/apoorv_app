@@ -23,7 +23,7 @@ class SingleFeed extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var border;
+    ShapeBorder? border;
     if (priority) {
       border = RoundedRectangleBorder(
         side: const BorderSide(

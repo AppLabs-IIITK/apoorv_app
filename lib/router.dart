@@ -42,6 +42,7 @@ class _RoutingState extends State<Routing> {
       final hasName = name != null && name.trim().isNotEmpty;
 
       // Keep provider minimally updated for UI.
+      if (!context.mounted) return -1;
       final prov = Provider.of<UserProvider>(context, listen: false);
       prov.refreshUID(listen: false);
       prov.refreshIdToken(listen: false);
@@ -110,19 +111,24 @@ class _RoutingState extends State<Routing> {
 
                 Future.delayed(
                     const Duration(seconds: 1),
-                    () =>
-                        dialogBuilder(context, message: message, function: () {
-                          setState(() {
-                            _myFuture = getStartupPage(context);
-                          });
-                          Navigator.of(context).pop();
-                        }));
+                    () {
+                      if (!context.mounted) return;
+                      dialogBuilder(context, message: message, function: () {
+                        setState(() {
+                          _myFuture = getStartupPage(context);
+                        });
+                        Navigator.of(context).pop();
+                      });
+                    });
 
                 return const Scaffold(body: Center(child: SpinningApoorv()));
               } else {
                 Future.delayed(
                   const Duration(seconds: 0),
-                  () => showSnackbarOnScreen(context, "No data on Screen"),
+                  () {
+                    if (!context.mounted) return;
+                    showSnackbarOnScreen(context, "No data on Screen");
+                  },
                 );
                 return const Center(child: Text("No data on Screen"));
               }

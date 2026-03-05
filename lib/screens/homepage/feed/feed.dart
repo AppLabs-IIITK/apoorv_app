@@ -62,11 +62,14 @@ class _FeedScreenState extends State<FeedScreen> {
                   }
                   Future.delayed(
                       const Duration(seconds: 1),
-                      () => dialogBuilder(context, message: message,
-                              function: () {
-                            _updateFeedData();
-                            Navigator.of(context).pop();
-                          }));
+                      () {
+                        if (!context.mounted) return;
+                        dialogBuilder(context, message: message,
+                                function: () {
+                          _updateFeedData();
+                          Navigator.of(context).pop();
+                        });
+                      });
 
                   return const Scaffold(body: Center(child: SpinningApoorv()));
                 } else if (snapshot.data['success']) {
