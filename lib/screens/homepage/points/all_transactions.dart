@@ -67,11 +67,11 @@ class _AllTransactionsState extends State<AllTransactions> {
       final page = _globalMode
           ? await api.getGlobalTransactions(
               lastDocument: _lastDocument,
-              limit: 30,
+              limit: 25,
             )
           : await api.getUserTransactionsPage(
               lastDocument: _lastDocument,
-              limit: 30,
+              limit: 25,
             );
 
       if (page['success'] != true) {
@@ -164,7 +164,12 @@ class _AllTransactionsState extends State<AllTransactions> {
     final formattedTime =
         DateFormat("MMMM d, yyyy 'at' h:mm a").format(updatedAt);
 
-    final isDebit = myUid != null && fromUid == myUid;
+    final myEmail = FirebaseAuth.instance.currentUser?.email?.trim().toLowerCase();
+
+    final fromEmail = (txn['fromEmail'] ?? '').toString().trim().toLowerCase();
+
+    final isDebit = (myUid != null && fromUid == myUid) || (myEmail != null && myEmail.isNotEmpty && fromEmail == myEmail);
+
     final name = isDebit ? (txn['toName'] ?? '') : (txn['fromName'] ?? '');
     final points = (txn['transactionValue'] is int)
         ? txn['transactionValue'] as int

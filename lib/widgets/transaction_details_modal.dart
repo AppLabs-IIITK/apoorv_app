@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../constants.dart';
@@ -43,19 +44,30 @@ class _TransactionDetailsModalState extends State<TransactionDetailsModal> {
 
   Future<void> _fetchProfileImages() async {
     try {
-      final fromDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(widget.fromUid)
-          .get();
-      final toDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(widget.toUid)
-          .get();
+      String fromImg = '';
+      if (widget.fromUid.isNotEmpty) {
+        final doc = await FirebaseFirestore.instance.collection('users').doc(widget.fromUid).get();
+        if (doc.exists) fromImg = (doc.data()?['photoUrl'] as String?)?.trim() ?? '';
+      }
+      if (fromImg.isEmpty && widget.fromEmail.isNotEmpty) {
+        final snap = await FirebaseFirestore.instance.collection('users').where('email', isEqualTo: widget.fromEmail).limit(1).get();
+        if (snap.docs.isNotEmpty) fromImg = (snap.docs.first.data()['photoUrl'] as String?)?.trim() ?? '';
+      }
+
+      String toImg = '';
+      if (widget.toUid.isNotEmpty) {
+        final doc = await FirebaseFirestore.instance.collection('users').doc(widget.toUid).get();
+        if (doc.exists) toImg = (doc.data()?['photoUrl'] as String?)?.trim() ?? '';
+      }
+      if (toImg.isEmpty && widget.toEmail.isNotEmpty) {
+        final snap = await FirebaseFirestore.instance.collection('users').where('email', isEqualTo: widget.toEmail).limit(1).get();
+        if (snap.docs.isNotEmpty) toImg = (snap.docs.first.data()['photoUrl'] as String?)?.trim() ?? '';
+      }
 
       if (mounted) {
         setState(() {
-          _fromImage = (fromDoc.data()?['photoUrl'] as String?)?.trim() ?? '';
-          _toImage = (toDoc.data()?['photoUrl'] as String?)?.trim() ?? '';
+          _fromImage = fromImg;
+          _toImage = toImg;
         });
       }
     } catch (_) {
@@ -237,7 +249,9 @@ class _TransactionDetailsModalState extends State<TransactionDetailsModal> {
                   email: widget.fromEmail,
                   profileImage: _fromImage,
                   label: 'From',
-                  isCurrentUser: widget.fromUid == widget.myUid,
+                  isCurrentUser: widget.fromUid == widget.myUid ||
+                      (widget.fromEmail.isNotEmpty &&
+                       widget.fromEmail.toLowerCase() == FirebaseAuth.instance.currentUser?.email?.toLowerCase()),
                 ),
               ),
               const Padding(
@@ -255,7 +269,9 @@ class _TransactionDetailsModalState extends State<TransactionDetailsModal> {
                   email: widget.toEmail,
                   profileImage: _toImage,
                   label: 'To',
-                  isCurrentUser: widget.toUid == widget.myUid,
+                  isCurrentUser: widget.toUid == widget.myUid ||
+                      (widget.toEmail.isNotEmpty &&
+                       widget.toEmail.toLowerCase() == FirebaseAuth.instance.currentUser?.email?.toLowerCase()),
                 ),
               ),
             ],

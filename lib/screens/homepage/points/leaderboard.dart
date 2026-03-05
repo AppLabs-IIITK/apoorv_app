@@ -178,7 +178,7 @@ class _LeaderboardState extends State<Leaderboard> {
       _isLoadingInitial = true;
     });
 
-    final page = await APICalls().getLeaderboardPage(limit: 20);
+    final page = await APICalls().getLeaderboardPage(limit: 25);
     if (!mounted) return;
 
     if (page['success'] == true) {
@@ -205,7 +205,7 @@ class _LeaderboardState extends State<Leaderboard> {
 
     final page = await APICalls().getLeaderboardPage(
       lastDocument: _lastDocument,
-      limit: 20,
+      limit: 25,
     );
 
     if (!mounted) return;
