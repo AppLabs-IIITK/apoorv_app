@@ -10,6 +10,7 @@ class LeaderboardCard extends StatelessWidget {
   final int? rank;
   final String? image;
   final String? uid;
+  final String? email;
 
   const LeaderboardCard({
     super.key,
@@ -18,6 +19,7 @@ class LeaderboardCard extends StatelessWidget {
     this.rank,
     this.image,
     this.uid,
+    this.email,
   });
 
   @override
@@ -56,87 +58,104 @@ class LeaderboardCard extends StatelessWidget {
         break;
     }
 
-    if (uid == Provider.of<UserProvider>(context, listen: false).uid) {
+    final isCurrentUser = uid == Provider.of<UserProvider>(context, listen: false).uid;
+    if (isCurrentUser) {
       color = Constants.redColor;
       spreadRadius = 6;
     }
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        vertical: 10,
-      ),
-      margin: EdgeInsets.symmetric(
-          horizontal: MediaQuery.of(context).size.width * 0.02),
+
+    return InkWell(
+      onTap: isCurrentUser ? null : () {
+        Navigator.pushNamed(
+          context,
+          '/payment',
+          arguments: {
+            'uid': uid,
+            'fullName': name,
+            'email': email ?? '',
+            'profileImage': image,
+            'fromSearch': true,
+          },
+        );
+      },
       child: Container(
-          // height: 70,
-          width: MediaQuery.of(context).size.width * 0.9,
-          decoration: BoxDecoration(
-            boxShadow: [
-              BoxShadow(
-                color: color ?? Colors.grey,
-                spreadRadius: spreadRadius ?? 2,
-                // blurRadius: blurRadius ?? 2,
-                offset: const Offset(0, 3),
-              )
-            ],
-            border: Border.all(
+        padding: const EdgeInsets.symmetric(
+          vertical: 10,
+        ),
+        margin: EdgeInsets.symmetric(
+            horizontal: MediaQuery.of(context).size.width * 0.02),
+        child: Container(
+            // height: 70,
+            width: MediaQuery.of(context).size.width * 0.9,
+            decoration: BoxDecoration(
+              boxShadow: [
+                BoxShadow(
+                  color: color ?? Colors.grey,
+                  spreadRadius: spreadRadius ?? 2,
+                  // blurRadius: blurRadius ?? 2,
+                  offset: const Offset(0, 3),
+                )
+              ],
+              border: Border.all(
+                color: color ?? Colors.grey.shade300,
+              ),
+              borderRadius: BorderRadius.circular(24),
               color: color ?? Colors.grey.shade300,
             ),
-            borderRadius: BorderRadius.circular(24),
-            color: color ?? Colors.grey.shade300,
-          ),
-          child: ListTile(
-              title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            // crossAxisAlignment: CrossAxisAlignment.,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    showRank,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: styleColor[color],
+            child: ListTile(
+                title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              // crossAxisAlignment: CrossAxisAlignment.,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      showRank,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: styleColor[color],
+                      ),
                     ),
-                  ),
-                  const SizedBox(
-                    width: 10,
-                  ),
-                  CircleAvatar(
-                    radius: 22,
-                    foregroundImage: NetworkImage(image ?? ''),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  name!,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: styleColor[color],
-                  ),
-                  softWrap: true,
+                    const SizedBox(
+                      width: 10,
+                    ),
+                    CircleAvatar(
+                      radius: 22,
+                      foregroundImage: NetworkImage(image ?? ''),
+                    ),
+                  ],
                 ),
-              ),
-              Row(
-                children: [
-                  Text(
-                    '$points ',
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    name!,
                     style: TextStyle(
                       fontSize: 16,
                       color: styleColor[color],
                     ),
+                    softWrap: true,
                   ),
-                  Icon(
-                    Icons.stars,
-                    color: styleColor[color],
-                    size: 20,
-                  ),
-                ],
-              )
-            ],
-          ))),
+                ),
+                Row(
+                  children: [
+                    Text(
+                      '$points ',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: styleColor[color],
+                      ),
+                    ),
+                    Icon(
+                      Icons.stars,
+                      color: styleColor[color],
+                      size: 20,
+                    ),
+                  ],
+                )
+              ],
+            ))),
+      ),
     );
   }
 }

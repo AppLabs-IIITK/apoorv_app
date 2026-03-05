@@ -27,14 +27,49 @@ class _PaymentState extends State<Payment> {
   @override
   void initState() {
     super.initState();
-    if (context.read<ReceiverProvider>().fromSearch) {
-      _myFuture = Future.value({'success': true});
-    } else {
-      // var to_uid = "123457";
-      // Provider.of<ReceiverProvider>(context, listen: false).setUID(to_uid);
-      _myFuture = Provider.of<ReceiverProvider>(context, listen: false)
-          .setReceiverData(context);
-    }
+
+    // Get arguments if passed
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+      // Check if arguments were passed (from modal/leaderboard) - prioritize these
+      if (args != null && args['fromSearch'] == true) {
+        // Coming from modal with arguments - always use these fresh arguments
+        final email = args['email']?.toString() ?? '';
+
+        // If email is missing, fetch full user data
+        if (email.isEmpty) {
+          final uid = args['uid']?.toString() ?? '';
+          if (uid.isNotEmpty) {
+            context.read<ReceiverProvider>().setUID(uid);
+            setState(() {
+              _myFuture = context.read<ReceiverProvider>().setReceiverData(context);
+            });
+          } else {
+            setState(() {
+              _myFuture = Future.value({'success': false, 'message': 'Invalid user'});
+            });
+          }
+        } else {
+          // Update provider with new data from arguments
+          context.read<ReceiverProvider>().setReceiverDataFromSearch(args);
+          setState(() {
+            _myFuture = Future.value({'success': true});
+          });
+        }
+      } else if (context.read<ReceiverProvider>().fromSearch) {
+        // Coming from search via provider (no arguments passed)
+        setState(() {
+          _myFuture = Future.value({'success': true});
+        });
+      } else {
+        // Default: fetch receiver data (QR scan)
+        setState(() {
+          _myFuture = Provider.of<ReceiverProvider>(context, listen: false)
+              .setReceiverData(context);
+        });
+      }
+    });
   }
 
   @override

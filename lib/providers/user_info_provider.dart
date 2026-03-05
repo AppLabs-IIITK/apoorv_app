@@ -20,6 +20,7 @@ class UserProvider extends ChangeNotifier {
   bool fromCollege = true;
 
   List<TransactionsWidget> transactions = [];
+  List<Map<String, dynamic>> transactionData = [];
 
   String uid = "Nothing to see here";
   String idToken = "somerandomidtoken";
@@ -137,9 +138,7 @@ class UserProvider extends ChangeNotifier {
     // refreshIdToken(listen: false);
     await Future.delayed(
       const Duration(seconds: 2),
-      () {
-        var s = "";
-      },
+      () {},
     );
     var response = await APICalls().transactionAPI(
       uid,
@@ -169,6 +168,7 @@ class UserProvider extends ChangeNotifier {
     // print(res['success']);
     if (res['success']) {
       transactions.clear();
+      transactionData.clear();
       if (res['transactions'].isNotEmpty) {
         for (var txn in res['transactions']) {
           final rawTs = txn['updatedAt'];
@@ -182,12 +182,30 @@ class UserProvider extends ChangeNotifier {
           }
           String formattedTime =
               DateFormat("MMMM d, yyyy 'at' h:mm a").format(utcTime);
+
+          // Store raw transaction data
+          transactionData.add({
+            'from': txn['from'],
+            'to': txn['to'],
+            'fromName': txn['fromName'],
+            'toName': txn['toName'],
+            'fromEmail': txn['fromEmail'],
+            'toEmail': txn['toEmail'],
+            'transactionValue': txn['transactionValue'],
+            'updatedAt': utcTime,
+            'formattedTime': formattedTime,
+          });
+
           if (txn['from'] == uid) {
             transactions.add(TransactionsWidget(
               name: txn['toName'],
               date: formattedTime,
               type: 'debit',
               points: txn['transactionValue'],
+              fromUid: txn['from']?.toString(),
+              toUid: txn['to']?.toString(),
+              fromEmail: txn['fromEmail']?.toString(),
+              toEmail: txn['toEmail']?.toString(),
             ));
           } else if (txn['to'] == uid) {
             transactions.add(TransactionsWidget(
@@ -195,6 +213,10 @@ class UserProvider extends ChangeNotifier {
               date: formattedTime,
               type: 'credit',
               points: txn['transactionValue'],
+              fromUid: txn['from']?.toString(),
+              toUid: txn['to']?.toString(),
+              fromEmail: txn['fromEmail']?.toString(),
+              toEmail: txn['toEmail']?.toString(),
             ));
           }
         }

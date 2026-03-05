@@ -1,5 +1,6 @@
 import 'package:apoorv_app/api.dart';
 import 'package:apoorv_app/widgets/points-widget/transactions.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -118,6 +119,265 @@ class _AllTransactionsState extends State<AllTransactions> {
     return DateTime.now();
   }
 
+  void _showTransactionDetails(Map<String, dynamic> txn) async {
+    final fromUid = txn['from']?.toString() ?? '';
+    final toUid = txn['to']?.toString() ?? '';
+    final fromName = txn['fromName']?.toString() ?? 'Unknown';
+    final toName = txn['toName']?.toString() ?? 'Unknown';
+    final fromEmail = txn['fromEmail']?.toString() ?? '';
+    final toEmail = txn['toEmail']?.toString() ?? '';
+    final points = (txn['transactionValue'] is int)
+        ? txn['transactionValue'] as int
+        : int.tryParse(txn['transactionValue']?.toString() ?? '') ?? 0;
+    final updatedAt = _asLocalDateTime(txn['updatedAt']);
+    final formattedTime =
+        DateFormat("MMMM d, yyyy 'at' h:mm a").format(updatedAt);
+
+    final myUid = FirebaseAuth.instance.currentUser?.uid;
+
+    // Fetch profile images
+    String fromImage = '';
+    String toImage = '';
+
+    try {
+      final fromDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(fromUid)
+          .get();
+      fromImage = (fromDoc.data()?['photoUrl'] as String?)?.trim() ?? '';
+    } catch (_) {}
+
+    try {
+      final toDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(toUid)
+          .get();
+      toImage = (toDoc.data()?['photoUrl'] as String?)?.trim() ?? '';
+    } catch (_) {}
+
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color.fromRGBO(18, 18, 18, 1),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Transaction Details',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Constants.yellowColor,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '$points',
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Constants.yellowColor,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Points',
+                  style: TextStyle(
+                    fontSize: 20,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              formattedTime,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildProfileCard(
+                    context: context,
+                    uid: fromUid,
+                    name: fromName,
+                    email: fromEmail,
+                    profileImage: fromImage,
+                    label: 'From',
+                    isCurrentUser: fromUid == myUid,
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: Icon(
+                    Icons.arrow_forward,
+                    color: Constants.yellowColor,
+                    size: 32,
+                  ),
+                ),
+                Expanded(
+                  child: _buildProfileCard(
+                    context: context,
+                    uid: toUid,
+                    name: toName,
+                    email: toEmail,
+                    profileImage: toImage,
+                    label: 'To',
+                    isCurrentUser: toUid == myUid,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileCard({
+    required BuildContext context,
+    required String uid,
+    required String name,
+    required String email,
+    required String profileImage,
+    required String label,
+    required bool isCurrentUser,
+  }) {
+    return InkWell(
+      onTap: isCurrentUser
+          ? null
+          : () {
+              Navigator.pop(context);
+              Navigator.pushNamed(
+                context,
+                '/payment',
+                arguments: {
+                  'uid': uid,
+                  'fullName': name,
+                  'email': email,
+                  'profileImage': profileImage,
+                  'fromSearch': true,
+                },
+              );
+            },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isCurrentUser
+              ? Constants.redColor.withOpacity(0.2)
+              : Constants.silverColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isCurrentUser ? Constants.redColor : Constants.silverColor,
+            width: 2,
+          ),
+        ),
+        child: Column(
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            profileImage.isNotEmpty
+                ? CircleAvatar(
+                    radius: 30,
+                    backgroundImage: NetworkImage(profileImage),
+                    onBackgroundImageError: (_, __) {},
+                    child: profileImage.isEmpty
+                        ? Text(
+                            name.isNotEmpty ? name[0].toUpperCase() : '?',
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Constants.blackColor,
+                            ),
+                          )
+                        : null,
+                  )
+                : CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Constants.yellowColor,
+                    child: Text(
+                      name.isNotEmpty ? name[0].toUpperCase() : '?',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Constants.blackColor,
+                      ),
+                    ),
+                  ),
+            const SizedBox(height: 8),
+            Text(
+              name,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (email.isNotEmpty)
+              Text(
+                email,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            if (isCurrentUser)
+              const Padding(
+                padding: EdgeInsets.only(top: 4),
+                child: Text(
+                  '(You)',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Constants.redColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            if (!isCurrentUser)
+              const Padding(
+                padding: EdgeInsets.only(top: 4),
+                child: Text(
+                  'Tap to pay',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Constants.yellowColor,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMyTxn(Map<String, dynamic> txn) {
     final myUid = FirebaseAuth.instance.currentUser?.uid;
     final fromUid = txn['from']?.toString();
@@ -138,6 +398,11 @@ class _AllTransactionsState extends State<AllTransactions> {
       date: formattedTime,
       type: isDebit ? 'debit' : 'credit',
       points: points,
+      fromUid: txn['from']?.toString(),
+      toUid: txn['to']?.toString(),
+      fromEmail: txn['fromEmail']?.toString(),
+      toEmail: txn['toEmail']?.toString(),
+      onTap: () => _showTransactionDetails(txn),
     );
   }
 
@@ -151,61 +416,64 @@ class _AllTransactionsState extends State<AllTransactions> {
         ? txn['transactionValue'] as int
         : int.tryParse(txn['transactionValue']?.toString() ?? '') ?? 0;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Constants.silverColor,
-          borderRadius: BorderRadius.circular(15),
-        ),
-        padding: const EdgeInsets.all(10),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return InkWell(
+      onTap: () => _showTransactionDetails(txn),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 5),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Constants.silverColor,
+            borderRadius: BorderRadius.circular(15),
+          ),
+          padding: const EdgeInsets.all(10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$fromName -> $toName',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Color.fromRGBO(18, 18, 18, 1),
+                      ),
+                    ),
+                    Text(
+                      formattedTime,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color.fromRGBO(18, 18, 18, 1),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
                 children: [
                   Text(
-                    '$fromName -> $toName',
+                    points.toString(),
                     style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Color.fromRGBO(18, 18, 18, 1),
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Constants.blackColor,
                     ),
                   ),
-                  Text(
-                    formattedTime,
-                    style: const TextStyle(
-                      fontSize: 12,
+                  const Text(
+                    'Points',
+                    style: TextStyle(
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Color.fromRGBO(18, 18, 18, 1),
                     ),
                   ),
                 ],
               ),
-            ),
-            Column(
-              children: [
-                Text(
-                  points.toString(),
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Constants.blackColor,
-                  ),
-                ),
-                const Text(
-                  'Points',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Color.fromRGBO(18, 18, 18, 1),
-                  ),
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

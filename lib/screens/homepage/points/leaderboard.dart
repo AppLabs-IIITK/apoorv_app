@@ -283,6 +283,7 @@ class _LeaderboardState extends State<Leaderboard> {
                                 name: data[0]['fullName'],
                                 points: data[0]['points'],
                                 uid: data[0]['uid'],
+                                email: data[0]['email'],
                               )),
                               Expanded(
                                 child: Padding(
@@ -299,6 +300,7 @@ class _LeaderboardState extends State<Leaderboard> {
                                       points: data[i + 1]['points'],
                                       rank: i + 2,
                                       uid: data[i + 1]['uid'],
+                                      email: data[i + 1]['email'],
                                     ),
                                     itemCount: data.length - 1,
                                   ),

@@ -9,6 +9,7 @@ class Winner extends StatelessWidget {
   final String? name;
   final int? points;
   final String? uid;
+  final String? email;
 
   const Winner({
     super.key,
@@ -16,12 +17,14 @@ class Winner extends StatelessWidget {
     this.name,
     this.points,
     this.uid,
+    this.email,
   });
 
   @override
   Widget build(BuildContext context) {
     Decoration? decoration;
-    if (uid == Provider.of<UserProvider>(context, listen: false).uid) {
+    final isCurrentUser = uid == Provider.of<UserProvider>(context, listen: false).uid;
+    if (isCurrentUser) {
       decoration = BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
@@ -30,51 +33,66 @@ class Winner extends StatelessWidget {
         ),
       );
     }
-    return Column(
-      children: [
-        Container(
-          decoration: decoration,
-          child: CircleAvatar(
-              backgroundImage: NetworkImage(image ?? ''),
-              radius: 50,
-              child: const Stack(
-                children: [
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: Icon(
-                      Icons.emoji_events,
-                      color: Constants.redColor,
-                      size: 40,
-                    ),
-                  )
-                ],
-              )),
-        ),
-        Text(
-          name!,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
+    return InkWell(
+      onTap: isCurrentUser ? null : () {
+        Navigator.pushNamed(
+          context,
+          '/payment',
+          arguments: {
+            'uid': uid,
+            'fullName': name,
+            'email': email ?? '',
+            'profileImage': image,
+            'fromSearch': true,
+          },
+        );
+      },
+      child: Column(
+        children: [
+          Container(
+            decoration: decoration,
+            child: CircleAvatar(
+                backgroundImage: NetworkImage(image ?? ''),
+                radius: 50,
+                child: const Stack(
+                  children: [
+                    Align(
+                      alignment: Alignment.bottomRight,
+                      child: Icon(
+                        Icons.emoji_events,
+                        color: Constants.redColor,
+                        size: 40,
+                      ),
+                    )
+                  ],
+                )),
           ),
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              "$points",
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+          Text(
+            name!,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 20,
             ),
-            const Icon(
-              Icons.stars,
-              color: Colors.white,
-              size: 16,
-            )
-          ],
-        )
-      ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                "$points",
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Icon(
+                Icons.stars,
+                color: Colors.white,
+                size: 16,
+              )
+            ],
+          )
+        ],
+      ),
     );
   }
 }
