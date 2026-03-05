@@ -221,7 +221,11 @@ class _ShopkeeperPointsScreenState extends State<ShopkeeperPointsScreen> {
                   //   () =>
                   //       showSnackbarOnScreen(context, snapshot.data['message']),
                   // );
-                  return Center(child: Text(snapshot.data['message']));
+                  final msg = (snapshot.data['message'] ??
+                          snapshot.data['error'] ??
+                          'Failed to load')
+                      .toString();
+                  return Center(child: Text(msg));
                 }
               } else {
                 return const Scaffold(body: Center(child: SpinningApoorv()));

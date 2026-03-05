@@ -64,6 +64,8 @@ async function verifyGoogleIdToken(idToken: string) {
   return {
     email,
     emailVerified: payload.email_verified || false,
+    name: payload.name || null,
+    photoUrl: payload.picture || null,
   };
 }
 
@@ -79,7 +81,7 @@ router.post("/google", async (req, res) => {
       return;
     }
 
-    let googleData: {email: string; emailVerified: boolean};
+    let googleData: {email: string; emailVerified: boolean; photoUrl: string | null};
     try {
       googleData = await verifyGoogleIdToken(idToken);
     } catch (error) {
@@ -112,6 +114,7 @@ router.post("/google", async (req, res) => {
 
     const rollNumber = extractRollNumber(email);
     const emailLocalPart = email.split("@")[0];
+    const photoUrl = googleData.photoUrl;
 
     const firebaseUser = await (async () => {
       try {
@@ -122,11 +125,19 @@ router.post("/google", async (req, res) => {
           return await admin.auth().createUser({
             email,
             emailVerified: true,
+            photoURL: photoUrl || undefined,
           });
         }
         throw error;
       }
     })();
+
+    // Ensure Auth user has photo URL
+    if (photoUrl) {
+      await admin.auth().updateUser(firebaseUser.uid, {
+        photoURL: photoUrl || undefined,
+      });
+    }
 
     // Create user doc immediately on login.
     // Doc id = uid (so Flutter can always read by auth uid)
@@ -140,6 +151,12 @@ router.post("/google", async (req, res) => {
         email,
         emailLocalPart,
         rollNumber,
+        // Mirror legacy API keys so Flutter can switch to Firestore with minimal changes
+        photoUrl: photoUrl,
+        phone: "",
+        fromCollege: true,
+        collegeName: "IIIT Kottayam",
+        points: 0,
         name: null,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         lastLogin: admin.firestore.FieldValue.serverTimestamp(),
@@ -149,6 +166,7 @@ router.post("/google", async (req, res) => {
         email,
         emailLocalPart,
         rollNumber,
+        ...(photoUrl ? {photoUrl} : {}),
         lastLogin: admin.firestore.FieldValue.serverTimestamp(),
       });
     }

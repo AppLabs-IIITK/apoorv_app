@@ -1,12 +1,12 @@
-import 'api.dart';
 import 'providers/user_info_provider.dart';
 import 'screens/homepage/homepage.dart';
-import 'screens/signup-flow/signup.dart';
 import 'screens/signup-flow/welcome.dart';
+import 'screens/signup-flow/signup.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'widgets/dialog.dart';
 import 'widgets/snackbar.dart';
@@ -27,60 +27,39 @@ class _RoutingState extends State<Routing> {
       return 0;
     }
 
-    Map<String, dynamic> usrResponse = {};
-
+    // Minimal onboarding gate:
+    // - if Firestore user doc has non-empty name -> go Home
+    // - else -> go onboarding (name)
     try {
-      usrResponse = await APICalls().getUserDataAPI(
-        FirebaseAuth.instance.currentUser!.uid,
-        (await FirebaseAuth.instance.currentUser!.getIdToken())!,
-      );
+      final uid = FirebaseAuth.instance.currentUser!.uid;
+      final doc = await FirebaseFirestore.instance
+          .collection("users")
+          .doc(uid)
+          .get();
+
+      final data = doc.data();
+      final name = (data == null) ? null : (data["name"] as String?);
+      final hasName = name != null && name.trim().isNotEmpty;
+
+      // Keep provider minimally updated for UI.
+      final prov = Provider.of<UserProvider>(context, listen: false);
+      prov.refreshUID(listen: false);
+      prov.refreshIdToken(listen: false);
+      if (FirebaseAuth.instance.currentUser?.email != null) {
+        prov.updateEmail(FirebaseAuth.instance.currentUser!.email!);
+      }
+      if (FirebaseAuth.instance.currentUser?.photoURL != null) {
+        prov.updateProfilePhoto(FirebaseAuth.instance.currentUser!.photoURL!);
+      }
+      if (hasName) {
+        prov.userName = name;
+      }
+
+      return hasName ? 2 : 1;
     } catch (e) {
-      print("Error in the try catch: $e");
+      print("Error while routing: $e");
       return -1;
     }
-
-    // print(FirebaseAuth.instance.currentUser!);
-    // BaseClient.printAuthTokenForTest();
-
-    // userProvider.refreshIdToken();
-    // print(context.read<UserProvider>().idToken);
-    // print("In here");
-    // var usrResponse = await userProvider.getUserInfo();
-
-    if (!usrResponse['success']) {
-      return 1;
-    } else if (usrResponse['success']) {
-      // print(context.read<UserProvider>().);
-      var prov = Provider.of<UserProvider>(context, listen: false);
-      if (usrResponse['fromCollege']) {
-        prov.changeSameCollegeDetails(
-          newUserName: usrResponse['fullName'],
-          newUserRollNo: usrResponse['rollNumber'],
-          newUserPhNo: usrResponse['phone'],
-        );
-
-        // prov.updateProfilePhoto(usrResponse['photoUrl']);
-        // prov.updatePoints(usrResponse['points']);
-        // prov.updateEmail(usrResponse['email']);
-        // prov.refreshUID();
-        // prov.refreshIdToken();
-      } else {
-        prov.changeOtherCollegeDetails(
-          newUserName: usrResponse['fullName'],
-          newUserCollegeName: usrResponse['collegeName'],
-          newUserPhNo: usrResponse['phone'],
-        );
-      }
-      prov.updateProfilePhoto(usrResponse['photoUrl']);
-      prov.updatePoints(usrResponse['points']);
-      prov.updateEmail(usrResponse['email']);
-      prov.refreshUID();
-      prov.refreshIdToken();
-
-      return 2;
-    }
-
-    return -1;
   }
 
   late Future<int> _myFuture;
@@ -114,17 +93,16 @@ class _RoutingState extends State<Routing> {
                   Navigator.of(context)
                       .pushReplacementNamed(WelcomeScreen.routeName);
                 });
-              } else if (userProgress == 1) {
-                // If Firebase auth currentuser present, and not in database then call signup screen
-                SchedulerBinding.instance.addPostFrameCallback((_) {
-                  Navigator.of(context)
-                      .pushReplacementNamed(SignUpScreen.routeName);
-                });
               } else if (userProgress == 2) {
                 // If firebase auth currentuser present, and in database then call homepage
                 SchedulerBinding.instance.addPostFrameCallback((_) {
                   Navigator.of(context)
                       .pushReplacementNamed(HomePage.routeName);
+                });
+              } else if (userProgress == 1) {
+                SchedulerBinding.instance.addPostFrameCallback((_) {
+                  Navigator.of(context)
+                      .pushReplacementNamed(SignUpScreen.routeName);
                 });
               } else if (userProgress == -1) {
                 var message =

@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "389271534594-m2grepi72o6gb8evp061c8o7u1n98ld9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.apoorv_app",
+            "certificate_hash": "07a0898ec9aaed2d22b04c79b0c4029afd1376e1"
+          }
+        },
+        {
           "client_id": "389271534594-f2ki17289n40i9iei81s0f48g13sf04k.apps.googleusercontent.com",
           "client_type": 3
         }

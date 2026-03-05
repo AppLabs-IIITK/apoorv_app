@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Users collection: anyone can read; only the user can update their own doc.
+    match /users/{userId} {
+      allow read: if true;
+
+      // Created by Cloud Functions (admin SDK). Disallow direct client create.
+      allow create: if false;
+
+      function allowedUserUpdate() {
+        // Only allow editing onboarding/profile fields.
+        // Everything else must remain unchanged.
+        return request.resource.data.diff(resource.data).changedKeys().hasOnly([
+          'name',
+          'nameLower',
+          'photoURL'
+        ]);
+      }
+
+      allow update: if isOwner(userId) && allowedUserUpdate();
+
+      allow delete: if false;
+    }
+
+    // Everything else: public read, no writes.
+    match /{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

@@ -42,7 +42,7 @@ class BaseClient {
     while (firebaseIdToken!.isNotEmpty) {
       int startTokenLength =
           (firebaseIdToken.length >= 500 ? 500 : firebaseIdToken.length);
-      print("TokenPart: " + firebaseIdToken.substring(0, startTokenLength));
+      print("TokenPart: ${firebaseIdToken.substring(0, startTokenLength)}");
       int lastTokenLength = firebaseIdToken.length;
       firebaseIdToken =
           firebaseIdToken.substring(startTokenLength, lastTokenLength);

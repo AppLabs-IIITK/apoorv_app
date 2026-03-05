@@ -1,13 +1,14 @@
 import 'package:apoorv_app/widgets/snackbar.dart';
 import 'package:apoorv_app/widgets/spinning_apoorv.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 
 import '../../constants.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../providers/user_info_provider.dart';
-import 'letsgo.dart';
+import '../homepage/homepage.dart';
 
 class SignUpScreen extends StatefulWidget {
   static const routeName = '/sign-up';
@@ -19,10 +20,8 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController userNameController = TextEditingController();
-  final TextEditingController userPhNoController = TextEditingController();
   final TextEditingController userRollNoController = TextEditingController();
-  final TextEditingController userCollegeNameController =
-      TextEditingController();
+  final TextEditingController userPhoneController = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
 
@@ -32,12 +31,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
   void dispose() {
     userNameController.dispose();
     userRollNoController.dispose();
-    userCollegeNameController.dispose();
-    userPhNoController.dispose();
+    userPhoneController.dispose();
     super.dispose();
   }
-
-  bool isChecked = true;
 
   bool popStatus = true;
   int popCount = 0;
@@ -47,7 +43,32 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.initState();
     Provider.of<UserProvider>(context, listen: false)
         .refreshGoogleServiceData();
+
+    // Prefill roll number from Firestore (created during login) and keep it read-only.
+    _prefillRollNumber();
     popScreen(context);
+  }
+
+  Future<void> _prefillRollNumber() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      final doc = await FirebaseFirestore.instance
+          .collection("users")
+          .doc(user.uid)
+          .get();
+      final data = doc.data();
+      final roll = (data == null) ? null : (data["rollNumber"] as String?);
+      if (roll != null && roll.trim().isNotEmpty && mounted) {
+        setState(() {
+          userRollNoController.text = roll;
+        });
+      }
+    } catch (e) {
+      // Non-fatal; user can still continue with just name.
+      print("Failed to prefill roll number: $e");
+    }
   }
 
   Future<void> popScreen(BuildContext context) async {
@@ -146,107 +167,40 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 )),
                             Constants.gap,
                             TextFormField(
-                                controller: userPhNoController,
+                                controller: userRollNoController,
+                                enabled: false,
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16)),
+                                  filled: true,
+                                  fillColor: Constants.silverColor,
+                                  hintText: "Roll Number",
+                                  hintStyle:
+                                      const TextStyle(color: Colors.black54),
+                                )),
+                            Constants.gap,
+                            TextFormField(
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
                                     return "Phone number is required";
-                                  } else if (value.length != 10) {
-                                    return "Phone number must be exactly 10 digits long";
+                                  }
+                                  if (value.length != 10) {
+                                    return "Phone number must be 10 digits";
                                   }
                                   return null;
                                 },
+                                controller: userPhoneController,
                                 keyboardType: TextInputType.phone,
-                                inputFormatters: [
-                                  LengthLimitingTextInputFormatter(10),
-                                  FilteringTextInputFormatter.digitsOnly,
-                                ],
+                                maxLength: 10,
                                 decoration: InputDecoration(
                                   border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(16)),
                                   filled: true,
                                   fillColor: Constants.yellowColor,
-                                  hintText: 'Phone Number',
+                                  hintText: "Phone Number",
                                   hintStyle:
                                       const TextStyle(color: Colors.black),
                                 )),
-                            Constants.gap,
-                            if (isChecked)
-                              Column(
-                                children: [
-                                  TextFormField(
-                                      controller: userRollNoController,
-                                      validator: (value) {
-                                        if (value == null ||
-                                            value.isEmpty ||
-                                            !RegExp(r"(2021|2022|2023|2024|2025)(bcs|bec|bcy|bcd)0\d{3}")
-                                                .hasMatch(
-                                                    value.toLowerCase())) {
-                                          return "You know the format";
-                                        }
-                                        return null;
-                                      },
-                                      decoration: InputDecoration(
-                                        border: OutlineInputBorder(
-                                            borderSide:
-                                                const BorderSide(width: 50),
-                                            borderRadius:
-                                                BorderRadius.circular(16)),
-                                        filled: true,
-                                        fillColor: Constants.yellowColor,
-                                        hintText: 'Roll Number',
-                                        hintStyle: const TextStyle(
-                                            color: Colors.black),
-                                      )),
-                                  Constants.gap,
-                                ],
-                              ),
-                            if (!isChecked)
-                              Column(
-                                children: [
-                                  TextFormField(
-                                      controller: userCollegeNameController,
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return "Fill your college name!";
-                                        }
-                                        return null;
-                                      },
-                                      decoration: InputDecoration(
-                                        border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(16)),
-                                        filled: true,
-                                        fillColor: Constants.yellowColor,
-                                        hintText: "College Name",
-                                        hintStyle: const TextStyle(
-                                            color: Colors.black),
-                                      )),
-                                  Constants.gap,
-                                ],
-                              ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Transform.scale(
-                                  scale: 1.2,
-                                  child: Checkbox(
-                                    fillColor: isChecked? MaterialStateProperty.all(Constants.redColor): MaterialStateProperty.all(Colors.transparent),
-                                    checkColor: Colors.white,
-                                    value: isChecked,
-                                    onChanged: (bool? value) {
-                                      userCollegeNameController.clear();
-                                      userRollNoController.clear();
-                                      setState(() {
-                                        isChecked = value!;
-                                      });
-                                    },
-                                  ),
-                                ),
-                                const Text(
-                                    style: TextStyle(fontSize: 17),
-                                    "From IIIT Kottayam"),
-                              ],
-                            ),
                             Constants.gap,
                             FilledButton(
                               onPressed: isProcessing
@@ -257,76 +211,53 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                           isProcessing = true;
                                         });
                                       }
-                                      Map<String, Object> args;
                                       if (_formKey.currentState!.validate()) {
-                                        userProvider.fromCollege = isChecked;
-                                        if (isChecked) {
-                                          userProvider.changeSameCollegeDetails(
-                                              newUserName:
-                                                  userNameController.text,
-                                              newUserRollNo:
-                                                  userRollNoController.text,
-                                              newUserPhNo:
-                                                  userPhNoController.text);
-                                        } else {
-                                          userProvider
-                                              .changeOtherCollegeDetails(
-                                            newUserName:
-                                                userNameController.text,
-                                            newUserCollegeName:
-                                                userCollegeNameController.text,
-                                            newUserPhNo:
-                                                userPhNoController.text,
-                                          );
-                                        }
-                                        // ScaffoldMessenger.of(context).showSnackBar(
-                                        //   const SnackBar(content: Text('Logging In')),
-                                        //   );
-                                        if (isChecked) {
-                                          args = {
-                                            'fromCollege': isChecked,
-                                            'role': "user",
-                                            'fullName': userNameController.text,
-                                            'rollNumber':
-                                                userRollNoController.text,
-                                            'phone': userPhNoController.text,
-                                            'collegeName': 'IIIT Kottayam',
-                                            'email': context
-                                                .read<UserProvider>()
-                                                .userEmail,
-                                          };
-                                        } else {
-                                          args = {
-                                            'fromCollege': isChecked,
-                                            'role': "user",
-                                            'fullName': userNameController.text,
-                                            'phone': userPhNoController.text,
-                                            'collegeName':
-                                                userCollegeNameController.text,
-                                            'email': context
-                                                .read<UserProvider>()
-                                                .userEmail,
-                                          };
-                                        }
+                                        try {
+                                          final user =
+                                              FirebaseAuth.instance.currentUser;
+                                          if (user == null) {
+                                            throw Exception("Not signed in");
+                                          }
 
-                                        // print(args);
-                                        var response =
-                                            await Provider.of<UserProvider>(
-                                                    context,
-                                                    listen: false)
-                                                .uploadUserData(args);
+                                           await FirebaseFirestore.instance
+                                               .collection("users")
+                                               .doc(user.uid)
+                                               .set(
+                                             {
+                                                "name":
+                                                    userNameController.text.trim(),
+                                                "nameLower": userNameController
+                                                    .text
+                                                    .trim()
+                                                    .toLowerCase(),
+                                                "phone":
+                                                    userPhoneController.text.trim(),
+                                              },
+                                              SetOptions(merge: true),
+                                            );
 
-                                        if (context.mounted) {
-                                          if (response['success']) {
+                                          userProvider.userName =
+                                              userNameController.text.trim();
+                                          userProvider.userPhNo =
+                                              userPhoneController.text.trim();
+
+                                          if (context.mounted) {
                                             showSnackbarOnScreen(
-                                                context, response['message']);
-
+                                                context, "Onboarding complete");
                                             Navigator.of(context)
                                                 .restorablePushReplacementNamed(
-                                                    LetsGoPage.routeName);
-                                          } else {
+                                                    HomePage.routeName);
+                                          }
+                                        } catch (e) {
+                                          if (context.mounted) {
                                             showSnackbarOnScreen(
-                                                context, response['error']);
+                                                context, "Failed to save name");
+                                          }
+                                        } finally {
+                                          if (mounted) {
+                                            setState(() {
+                                              isProcessing = false;
+                                            });
                                           }
                                         }
                                       }

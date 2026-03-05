@@ -212,7 +212,7 @@ class _PaymentState extends State<Payment> {
                             //       Constants.redColor),
                             //   foregroundColor: MaterialStateProperty.all<Color>(
                             //       Constants.whiteColor),
-                              
+
                             // ),
                             child: Container(
                               height: 48,

@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -63,7 +64,9 @@ class ShopkeeperProvider extends ChangeNotifier {
     refreshUID();
     refreshIdToken();
     updateEmail(FirebaseAuth.instance.currentUser!.email!);
-    updateProfilePhoto(FirebaseAuth.instance.currentUser!.photoURL!);
+    if (FirebaseAuth.instance.currentUser!.photoURL != null) {
+      updateProfilePhoto(FirebaseAuth.instance.currentUser!.photoURL!);
+    }
   }
 
   void updatePoints(int newPoints) {
@@ -109,7 +112,15 @@ class ShopkeeperProvider extends ChangeNotifier {
       transactions.clear();
       if (res['transactions'].isNotEmpty) {
         for (var txn in res['transactions']) {
-          DateTime utcTime = DateTime.parse(txn['updatedAt']).toLocal();
+          final rawTs = txn['updatedAt'];
+          DateTime utcTime;
+          if (rawTs is Timestamp) {
+            utcTime = rawTs.toDate().toLocal();
+          } else if (rawTs is DateTime) {
+            utcTime = rawTs.toLocal();
+          } else {
+            utcTime = DateTime.parse(rawTs.toString()).toLocal();
+          }
           String formattedTime =
               DateFormat("MMMM d, yyyy 'at' h:mm a").format(utcTime);
           if (txn['from'] == uid) {

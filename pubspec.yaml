@@ -57,6 +57,7 @@ dependencies:
   supabase: ^2.6.3
   supabase_flutter: ^2.8.4
   flutter_colorpicker: ^1.0.3
+  http: ^1.2.2
 
 dev_dependencies:
   flutter_test:

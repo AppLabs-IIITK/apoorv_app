@@ -1,120 +1,220 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:dio/dio.dart';
-
-import 'base_client.dart';
+import 'app_config.dart';
 
 class APICalls {
   Future<Map<String, dynamic>> getUserDataAPI(String uid, String idToken,
       {Map<String, dynamic>? args}) async {
-    Map<String, dynamic> payload = {};
+    // Firestore is the source of truth for user profile data.
+    // Keep the return shape compatible with the old REST response.
     try {
-      var response = await BaseClient.dio.get(
-        '/user/$uid',
-        options: Options(
-          headers: {
-            'Authorization': idToken,
-          },
-        ),
-      );
-      if (response.statusCode == 200) {
-        payload =
-            json.decode(response.toString())["user"] as Map<String, dynamic>;
-        // print(payload);
-        payload['success'] = true;
-        payload['message'] = 'Your user data has been updated';
+      final snap =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+      if (!snap.exists) {
+        return {
+          'success': false,
+          'error': 'user-not-found',
+        };
       }
-    } on DioException catch (e) {
-      print("Response code: ${e.response!.statusCode}");
-      print(e.message);
-      if (e.type == DioExceptionType.badResponse) {
-        payload['error'] = "${e.type.name} ${e.response!.statusCode}";
-      } else if (e.type == DioExceptionType.connectionError) {
-        payload['error'] = "${e.type.name} Connection error";
-      } else {
-        payload['error'] = "Unhandled/Unknown Error, with name: ${e.type.name}";
-      }
-      payload['success'] = false;
+
+      final data = snap.data() ?? <String, dynamic>{};
+      final currentUser = FirebaseAuth.instance.currentUser;
+
+      final email = (data['email'] as String?)?.trim() ??
+          (currentUser?.email?.trim() ?? '');
+
+      // Fallback chain: Firestore photoUrl -> Firebase Auth photoURL -> empty string
+      final firestorePhotoUrl = (data['photoUrl'] as String?)?.trim() ?? '';
+      final authPhotoUrl = currentUser?.photoURL?.trim() ?? '';
+      final photoUrl = firestorePhotoUrl.isNotEmpty ? firestorePhotoUrl : authPhotoUrl;
+
+      final fullName = (data['fullName'] as String?)?.trim();
+      final name = (data['name'] as String?)?.trim();
+      final pointsValue = data['points'];
+
+      return {
+        'success': true,
+        'message': 'Your user data has been updated',
+        'uid': uid,
+        'email': email,
+        'photoUrl': photoUrl,
+        'rollNumber': data['rollNumber'],
+        'fromCollege': data['fromCollege'] ?? true,
+        'collegeName': data['collegeName'] ?? 'IIIT Kottayam',
+        'phone': data['phone'] ?? '',
+        'points': pointsValue is int ? pointsValue : 0,
+        // App screens/providers currently expect this key.
+        'fullName': (name != null && name.isNotEmpty)
+            ? name
+            : (fullName ?? ''),
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
     }
-    return payload;
   }
 
   Future<Map<String, dynamic>> uploadUserData(
     Map<String, dynamic> args,
     String idToken,
   ) async {
-    Map<String, dynamic> payload = {};
+    // Firestore is the source of truth for user profile data.
+    // Keep this method so existing call sites still work.
     try {
-      var response = await BaseClient.dio.post(
-        '/user',
-        data: jsonEncode(args),
-        options: Options(
-          headers: {'Authorization': idToken},
-        ),
-      );
-
-      if (response.statusCode == 201) {
-        var res = json.decode(response.toString());
-        payload['success'] = true;
-        payload['message'] = res['message'];
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        return {
+          'success': false,
+          'message': 'Not signed in',
+        };
       }
-    } on DioException catch (e) {
-      print(e);
 
-      if (e.type == DioExceptionType.badResponse) {
-        var res = json.decode(e.response.toString());
-        payload['success'] = false;
-        payload['message'] = res['error'];
-      } else if (e.type == DioExceptionType.connectionError) {
-        payload['success'] = false;
-        payload['error'] = "Connection Error, please retry later";
-      } else {
-        payload['success'] = false;
-        payload['error'] = "Unknown Error, ${e.type.name}";
+      final update = <String, dynamic>{};
+
+      // Accept legacy keys but only persist what we allow users to edit.
+      final fullName = (args['fullName'] ?? args['name'])?.toString().trim();
+      if (fullName != null && fullName.isNotEmpty) {
+        update['name'] = fullName;
+        update['nameLower'] = fullName.toLowerCase();
       }
+
+      final phone = args['phone']?.toString().trim();
+      if (phone != null) {
+        update['phone'] = phone;
+      }
+
+      if (update.isEmpty) {
+        return {
+          'success': true,
+          'message': 'Nothing to update',
+        };
+      }
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .set(update, SetOptions(merge: true));
+
+      return {
+        'success': true,
+        'message': 'Profile updated',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': e.toString(),
+      };
     }
-    return payload;
   }
 
   Future<Map<String, dynamic>> getAllTransactions(
     String idToken,
     String uid,
   ) async {
-    Map<String, dynamic> payload = {};
     try {
-      var response = await BaseClient.dio.get(
-        '/transaction/$uid',
-        options: Options(
-          headers: {
-            'Authorization': idToken,
-          },
-        ),
-      );
+      final page = await getUserTransactionsPage(limit: 30);
+      if (page['success'] == true) {
+        return {
+          'success': true,
+          'transactions': page['transactions'] ?? <dynamic>[],
+          'message': 'Transactions fetched',
+        };
+      }
 
-      if (response.statusCode == 200) {
-        payload = json.decode(response.toString()) as Map<String, dynamic>;
-        payload['message'] = 'User data updated for transaction';
-      }
-      if (response.statusCode == 204) {
-        payload['transactions'] = [];
-        payload['success'] = true;
-        payload['message'] = payload['error'];
-      }
-    } on DioException catch (e) {
-      if (e.type == DioExceptionType.badResponse) {
-        payload['error'] = "${json.decode(e.response.toString())['error']}";
-      } else if (e.type == DioExceptionType.connectionError) {
-        payload['error'] = e.type.name;
-      } else {
-        payload['error'] = "${json.decode(e.response.toString())['error']}";
-      }
+      return {
+        'success': false,
+        'error': page['error'] ?? 'failed-to-fetch',
+      };
     } catch (e) {
-      print("Error: $e");
-      // Handle other exceptions appropriately
-      payload['success'] = false;
-      payload['error'] = e.toString();
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
     }
-    return payload;
+  }
+
+  Future<Map<String, dynamic>> getUserTransactionsPage({
+    DocumentSnapshot<Map<String, dynamic>>? lastDocument,
+    int limit = 30,
+  }) async {
+    try {
+      final email =
+          FirebaseAuth.instance.currentUser?.email?.trim().toLowerCase();
+      if (email == null || email.isEmpty) {
+        return {
+          'success': false,
+          'error': 'missing-email',
+        };
+      }
+
+      Query<Map<String, dynamic>> query = FirebaseFirestore.instance
+          .collection('transactions')
+          .where('involvedPartiesEmails', arrayContains: email)
+          .orderBy('updatedAt', descending: true)
+          .limit(limit);
+
+      if (lastDocument != null) {
+        query = query.startAfterDocument(lastDocument);
+      }
+
+      final snapshot = await query.get();
+
+      final txns = snapshot.docs
+          .map((d) => <String, dynamic>{'id': d.id, ...d.data()})
+          .toList();
+
+      return {
+        'success': true,
+        'transactions': txns,
+        'lastDocument': snapshot.docs.isNotEmpty ? snapshot.docs.last : null,
+        'hasMore': snapshot.docs.length >= limit,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> getGlobalTransactions({
+    DocumentSnapshot<Map<String, dynamic>>? lastDocument,
+    int limit = 20,
+  }) async {
+    try {
+      Query<Map<String, dynamic>> query = FirebaseFirestore.instance
+          .collection('transactions')
+          .orderBy('updatedAt', descending: true)
+          .limit(limit);
+
+      if (lastDocument != null) {
+        query = query.startAfterDocument(lastDocument);
+      }
+
+      final snapshot = await query.get();
+
+      final txns = snapshot.docs
+          .map((d) => <String, dynamic>{'id': d.id, ...d.data()})
+          .toList();
+
+      return {
+        'success': true,
+        'transactions': txns,
+        'lastDocument': snapshot.docs.isNotEmpty ? snapshot.docs.last : null,
+        'hasMore': snapshot.docs.length >= limit,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
   }
 
   Future<Map<String, dynamic>> transactionAPI(
@@ -123,158 +223,189 @@ class APICalls {
     int amount,
     // String idToken,
   ) async {
-    var args = {
-      "from": from,
-      "to": to,
-      "amount": amount,
-      "transactionType": "user",
-    };
-    Map<String, dynamic> retValue = {};
-
-    Map<String, dynamic> res = {};
-
     try {
-      var response = await BaseClient.dio.post(
-        '/transaction',
-        data: jsonEncode(args),
-        // options: Options(
-        //   headers: {
-        //     'Authorization': idToken,
-        //   },
-        // ),
-      );
-      print("Response in api call:$response");
-
-      res = json.decode(response.toString());
-      print(res);
-
-      retValue = {
-        'success': true,
-        'message': 'Transaction completed successfully!',
-      };
-    } on DioException catch (e) {
-      print(e);
-
-      if (e.type == DioExceptionType.badResponse) {
-        print(e);
-        print(e.response!);
-        retValue = {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        return {
           'success': false,
-          'message':
-              'Transaction didn"t complete!, ${e.type.name}\n${json.decode(e.response.toString())['error']}',
-        };
-      } else {
-        retValue = {
-          'success': false,
-          'message': 'Transaction didn"t complete!, ${e.type.name}',
+          'message': 'Not signed in',
         };
       }
-    }
 
-    return retValue;
+      final idToken = await user.getIdToken();
+      final url = Uri.parse('${AppConfig.functionsUrl}/transaction');
+      final resp = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $idToken',
+        },
+        body: jsonEncode({
+          'from': from,
+          'to': to,
+          'amount': amount,
+        }),
+      );
+
+      final body = resp.body.trim().isEmpty
+          ? <String, dynamic>{}
+          : (jsonDecode(resp.body) as Map<String, dynamic>);
+
+      if (resp.statusCode == 200 && body['success'] == true) {
+        return {
+          'success': true,
+          'message': body['message'] ?? 'Transaction completed successfully',
+          'transactionId': body['transactionId'],
+        };
+      }
+
+      return {
+        'success': false,
+        'message': body['message'] ?? 'Transaction failed',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': e.toString(),
+      };
+    }
   }
 
   Future<Map<String, dynamic>> getLeaderboard(String idToken) async {
-    Map<String, dynamic> payload = {};
     try {
-      var response = await BaseClient.dio.get(
-        '/user-list/?sort=points&order=-1',
-        options: Options(
-          headers: {
-            'Authorization': idToken,
-          },
-        ),
-      );
+      final snap = await FirebaseFirestore.instance
+          .collection('users')
+          .orderBy('points', descending: true)
+          .limit(50)
+          .get();
 
-      print("Leaderboard Query: $response");
+      final results = snap.docs.map((d) {
+        final u = d.data();
+        final name = (u['name'] as String?)?.trim();
+        final legacyName = (u['fullName'] as String?)?.trim();
+        final firestorePhoto = (u['photoUrl'] as String?)?.trim() ?? '';
 
-      if (response.statusCode == 200) {
-        payload = json.decode(response.toString()) as Map<String, dynamic>;
-        payload['message'] = 'User data updated for leaderboard';
-      }
-    } on DioException catch (e) {
-      if (e.type == DioExceptionType.badResponse) {
-        print("Response code: ${e.response!.statusCode}");
-        payload['error'] =
-            "${json.decode(e.response.toString())['error']}\n${e.type.name}, ${e.response!.statusCode}";
-      } else if (e.type == DioExceptionType.connectionError) {
-        payload['error'] = "${e.type.name} Connection Error";
-      } else {
-        payload['error'] =
-            "${json.decode(e.response.toString())['error']}\n${e.type.name}, ${e.response!.statusCode}";
-      }
+        return {
+          'uid': u['uid'] ?? d.id,
+          'fullName': (name != null && name.isNotEmpty)
+              ? name
+              : (legacyName ?? 'Unknown'),
+          'email': u['email'] ?? '',
+          'points': u['points'] ?? 0,
+          'profileImage': firestorePhoto,
+        };
+      }).toList();
+
+      return {
+        'success': true,
+        'results': results,
+        'message': 'User data updated for leaderboard',
+      };
     } catch (e) {
-      print("Error: $e");
-      // Handle other exceptions appropriately
-      payload['success'] = false;
-      payload['error'] = e.toString();
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
     }
-    return payload;
   }
 
   Future<Map<String, dynamic>> getFeed(String idToken) async {
-    Map<String, dynamic> payload = {};
     try {
-      var response = await BaseClient.dio.get(
-        '/feed',
-        options: Options(
-          headers: {
-            'Authorization': idToken,
-          },
-        ),
-      );
+      // Firestore-backed feed.
+      // Stored as a single doc so Home tab can fetch in one read.
+      final doc = await FirebaseFirestore.instance
+          .collection('feed')
+          .doc('latest')
+          .get();
 
-      if (response.statusCode == 200) {
-        payload = json.decode(response.toString()) as Map<String, dynamic>;
-        payload['message'] = 'User data updated for transaction';
-      }
-    } on DioException catch (e) {
-      if (e.type == DioExceptionType.badResponse) {
-        print("Response code: ${e.response!.statusCode}");
-        payload['error'] = "${json.decode(e.response.toString())['error']}";
-      } else if (e.type == DioExceptionType.connectionError) {
-        payload['error'] = "${e.type.name} Connection Error";
-      } else {
-        payload['error'] =
-            "${json.decode(e.response.toString())['error']}\n${e.type.name}, ${e.response!.statusCode}";
-      }
+      final data = doc.data();
+      final raw = (data == null) ? null : data['body'];
+      final body = (raw is List) ? raw : <dynamic>[];
+
+      return {
+        'success': true,
+        'body': body,
+        'message': 'Feed fetched',
+      };
     } catch (e) {
-      print("Error: $e");
-      // Handle other exceptions appropriately
-      payload['success'] = false;
-      payload['error'] = e.toString();
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
     }
-    return payload;
   }
 
   Future<Map<String, dynamic>> getUsersSearchList(
       String query, String idToken) async {
-    Map<String, dynamic> payload = {};
     try {
-      var response = await BaseClient.dio.get(
-        '/user-list/?search-key=$query&num=3',
-        options: Options(
-          headers: {
-            'Authorization': idToken,
-          },
-        ),
-      );
-
-      print(
-          "Response at time: ${DateTime.now()} with search query: $query -> $response");
-
-      payload = json.decode(response.toString());
-      payload['message'] = "Users fetched";
-    } on DioException catch (e) {
-      payload['success'] = false;
-      if (e.type == DioExceptionType.connectionError) {
-        payload['error'] = "Connection Error";
-        print("Connection Error in getting users list");
-      } else if (e.response!.statusCode == 500) {
-        print(e.response!.statusMessage);
-        payload['error'] = e.response!.statusMessage;
+      final q = query.trim().toLowerCase();
+      if (q.isEmpty) {
+        return {
+          'success': true,
+          'results': <dynamic>[],
+          'message': 'Users fetched',
+        };
       }
+
+      final seen = <String>{};
+      final results = <Map<String, dynamic>>[];
+
+      Future<void> addFromSnap(QuerySnapshot<Map<String, dynamic>> snap) async {
+        for (final d in snap.docs) {
+          final u = d.data();
+          final uid = (u['uid'] ?? d.id).toString();
+          if (seen.contains(uid)) continue;
+          seen.add(uid);
+
+          final name = (u['name'] as String?)?.trim();
+          final legacyName = (u['fullName'] as String?)?.trim();
+          final firestorePhoto = (u['photoUrl'] as String?)?.trim() ?? '';
+
+          results.add({
+            'uid': uid,
+            'fullName': (name != null && name.isNotEmpty)
+                ? name
+                : (legacyName ?? 'Unknown'),
+            'email': u['email'] ?? '',
+            'points': u['points'] ?? 0,
+            'profileImage': firestorePhoto,
+          });
+          if (results.length >= 3) return;
+        }
+      }
+
+      // Prefer nameLower for efficient prefix search.
+      final nameSnap = await FirebaseFirestore.instance
+          .collection('users')
+          .orderBy('nameLower')
+          .startAt([q])
+          .endAt(['$q\uf8ff'])
+          .limit(3)
+          .get();
+      await addFromSnap(nameSnap);
+
+      // If still short, try email prefix search.
+      if (results.length < 3) {
+        final emailSnap = await FirebaseFirestore.instance
+            .collection('users')
+            .orderBy('email')
+            .startAt([q])
+            .endAt(['$q\uf8ff'])
+            .limit(3)
+            .get();
+        await addFromSnap(emailSnap);
+      }
+
+      return {
+        'success': true,
+        'results': results,
+        'message': 'Users fetched',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
     }
-    return payload;
   }
 }

@@ -1,5 +1,7 @@
 import 'package:apoorv_app/providers/user_info_provider.dart';
 import 'package:apoorv_app/router.dart';
+import 'package:apoorv_app/screens/signup-flow/signup.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -12,6 +14,7 @@ class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
   static const routeName = '/welcome';
   @override
+  // ignore: library_private_types_in_public_api
   _WelcomeScreenState createState() => _WelcomeScreenState();
 }
 
@@ -90,29 +93,54 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         onPressed: isProcessing
                             ? null
                             : () async {
-                                if (!isProcessing) {
-                                  setState(() {
-                                    isProcessing = true;
-                                  });
-                                }
+                                setState(() {
+                                  isProcessing = true;
+                                });
+
                                 try {
-                                  await signInWithGoogle(context);
-                                  var auth = FirebaseAuth.instance;
-                                  if (auth.currentUser != null) {
-                                    if (context.mounted) {
-                                      showSnackbarOnScreen(
-                                          context, "User Signed in!");
-                                      Provider.of<UserProvider>(context,
-                                              listen: false)
-                                          .refreshGoogleServiceData();
-                                      Navigator.of(context)
-                                          .restorablePushReplacementNamed(
-                                              Routing.routeName);
+                                  final userCredential = await signInWithGoogle(context);
+
+                                  if (userCredential != null && context.mounted) {
+                                    // Check if user needs to complete signup
+                                    final user = FirebaseAuth.instance.currentUser;
+                                    if (user != null) {
+                                      final doc = await FirebaseFirestore.instance
+                                          .collection('users')
+                                          .doc(user.uid)
+                                          .get();
+
+                                      final data = doc.data();
+                                      final name = (data?['name'] as String?)?.trim() ?? '';
+                                      final phone = (data?['phone'] as String?)?.trim() ?? '';
+
+                                      if (name.isEmpty || phone.isEmpty) {
+                                        // Redirect to signup to complete profile
+                                        if (context.mounted) {
+                                          showSnackbarOnScreen(context, "Please complete your profile");
+                                          Navigator.of(context)
+                                              .restorablePushReplacementNamed(SignUpScreen.routeName);
+                                        }
+                                      } else {
+                                        // Profile complete, go to home
+                                        if (context.mounted) {
+                                          showSnackbarOnScreen(context, "User Signed in!");
+                                          Provider.of<UserProvider>(context, listen: false)
+                                              .refreshGoogleServiceData();
+                                          Navigator.of(context)
+                                              .restorablePushReplacementNamed(Routing.routeName);
+                                        }
+                                      }
                                     }
+                                  } else {
+                                    // Sign-in was cancelled or failed
+                                    setState(() {
+                                      isProcessing = false;
+                                    });
                                   }
                                 } catch (e) {
-                                  showSnackbarOnScreen(
-                                      context, "Choose a Google account");
+                                  if (context.mounted) {
+                                    showSnackbarOnScreen(context, "Authentication failed");
+                                  }
                                   setState(() {
                                     isProcessing = false;
                                   });
