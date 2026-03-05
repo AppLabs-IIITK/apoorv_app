@@ -156,7 +156,7 @@ router.post("/google", async (req, res) => {
         phone: "",
         fromCollege: true,
         collegeName: "IIIT Kottayam",
-        points: 0,
+        points: 50,
         name: null,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         lastLogin: admin.firestore.FieldValue.serverTimestamp(),

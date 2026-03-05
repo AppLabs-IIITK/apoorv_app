@@ -2,15 +2,20 @@ import 'package:apoorv_app/utils/models/feed.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../../constants.dart';
 // import '../../../../../utils/Models/Feed.dart';
-import 'services/supabase_service.dart';
+import '../../../../../providers/app_config_provider.dart';
+import 'services/map_data_service.dart';
 import 'components/map_markers.dart';
 import 'components/academic_block_markers.dart';
 import 'services/map_cache_service.dart';
 import 'screens/event_details.dart';
 import 'screens/all_events.dart';
+import 'components/marker_dialogs.dart';
+// import 'services/migration_service.dart'; // TODO: remove after migration
 
 // Map boundaries and zoom constraints
 const minZoom = 17.0;
@@ -53,33 +58,65 @@ class _MapsScreenState extends State<MapsScreen> {
   MapMarker? selectedMarker;
   List<Event> filteredEvents = [];
 
+  // ── Placement mode (add/move location) ──────────────────────────────
+  bool _isPlacementMode = false;
+  LatLng _placementPosition = const LatLng(9.754969, 76.650201);
+  Function(LatLng)? _onPlacementConfirmed;
+  String _placementHint = 'Pan map to position the pin, then confirm';
+
+  // ── Firestore streams ────────────────────────────────────────────────
+  StreamSubscription<QuerySnapshot>? _locationsSubscription;
+  StreamSubscription<QuerySnapshot>? _eventsSubscription;
+  List<QueryDocumentSnapshot> _locationsDocs = [];
+  List<QueryDocumentSnapshot> _eventsDocs = [];
+
   @override
   void initState() {
     super.initState();
-    _initializeMarkers();
+    _setupStreams();
   }
 
-  void _initializeMarkers() async {
-    await _loadMarkers();
-    // Start background cache comparison
-    unawaited(SupabaseService.compareAndUpdateCache(_updateMarkers));
+  @override
+  void dispose() {
+    _locationsSubscription?.cancel();
+    _eventsSubscription?.cancel();
+    super.dispose();
   }
 
-  Future<void> _loadMarkers() async {
-    final loadedMarkers = await SupabaseService.getMarkersWithEvents();
+  /// Subscribes to the locations and events Firestore collections.
+  /// Fires [_rebuildMarkers] whenever either collection changes.
+  /// Firestore offline persistence means this works seamlessly offline too.
+  void _setupStreams() {
+    _locationsSubscription = FirebaseFirestore.instance
+        .collection('locations')
+        .orderBy('created_at')
+        .snapshots()
+        .listen((snap) {
+      _locationsDocs = snap.docs;
+      _rebuildMarkers();
+    });
 
-    setState(() {
-      // Combine with mock data
-      markers = loadedMarkers;
+    _eventsSubscription = FirebaseFirestore.instance
+        .collection('events')
+        .orderBy('created_at')
+        .snapshots()
+        .listen((snap) {
+      _eventsDocs = snap.docs;
+      _rebuildMarkers();
     });
   }
 
-  void _updateMarkers() async {
-    await _loadMarkers();
-
-    // If a marker was selected, update the filtered events
-    if (selectedMarker != null) {
-      _updateFilteredEvents();
+  /// Converts the latest Firestore snapshot docs into [MapMarker] objects
+  /// and triggers a rebuild. Called whenever either stream emits.
+  void _rebuildMarkers() async {
+    final events = await MapDataService.buildEventsFromDocs(_eventsDocs);
+    final newMarkers =
+        MapDataService.buildMarkersFromDocs(_locationsDocs, events);
+    if (mounted) {
+      setState(() {
+        markers = newMarkers;
+        if (selectedMarker != null) _updateFilteredEvents();
+      });
     }
   }
 
@@ -274,16 +311,45 @@ class _MapsScreenState extends State<MapsScreen> {
                       ),
                     ),
                   ),
-                  // Location name
+                  // Location name row with optional admin add-event button
                   Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Text(
-                      selectedMarker!.locationName,
-                      style: const TextStyle(
-                        color: Constants.whiteColor,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            selectedMarker!.locationName,
+                            style: const TextStyle(
+                              color: Constants.whiteColor,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Consumer<AppConfigProvider>(
+                          builder: (context, config, _) {
+                            if (!config.isAdmin) return const SizedBox.shrink();
+                            return IconButton(
+                              icon: const Icon(Icons.add_circle_outline,
+                                  color: Constants.redColor),
+                              tooltip: 'Add Event',
+                              onPressed: () {
+                                Navigator.pop(context);
+                                MarkerDialogs.showAddEventDialog(
+                                  context: context,
+                                  locationId: selectedMarker!.id,
+                                  locationName: selectedMarker!.locationName,
+                                  selectedColor: selectedMarker!.markerColor,
+                                  selectedTextColor: selectedMarker!.textColor,
+                                  onEventAdded: _handleEventAdded,
+                                  onColorsSelected: _handleColorSelection,
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ),
                   // Day selector
@@ -488,6 +554,173 @@ class _MapsScreenState extends State<MapsScreen> {
     );
   }
 
+  // ── Placement mode ───────────────────────────────────────────────────
+
+  void _enterPlacementMode({
+    required LatLng initialPosition,
+    required Function(LatLng) onConfirmed,
+    String hint = 'Pan map to position the pin, then confirm',
+  }) {
+    setState(() {
+      _isPlacementMode = true;
+      _placementPosition = initialPosition;
+      _onPlacementConfirmed = onConfirmed;
+      _placementHint = hint;
+    });
+    mapController.move(initialPosition, mapController.camera.zoom);
+  }
+
+  void _exitPlacementMode() {
+    setState(() {
+      _isPlacementMode = false;
+      _onPlacementConfirmed = null;
+    });
+  }
+
+  Widget _buildPlacementOverlay() {
+    return Stack(
+      children: [
+        // Fixed crosshair pin at the screen center
+        // The map moves beneath it — the pin's bottom point is the exact chosen LatLng
+        Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Pin icon — shifted up so its tip lands on the map center point
+              Transform.translate(
+                offset: const Offset(0, -4),
+                child: const Icon(
+                  Icons.location_on,
+                  color: Constants.redColor,
+                  size: 52,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black54,
+                      offset: Offset(0, 3),
+                      blurRadius: 8,
+                    ),
+                  ],
+                ),
+              ),
+              // Tiny shadow dot directly below the pin tip
+              Container(
+                width: 8,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.black38,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Bottom confirmation panel
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Constants.blackColor,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.5),
+                  blurRadius: 24,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Handle bar
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        const Icon(Icons.open_with,
+                            color: Constants.creamColor, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _placementHint,
+                            style: const TextStyle(
+                              color: Constants.creamColor,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: _exitPlacementMode,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Constants.creamColor,
+                              side: const BorderSide(color: Colors.white24),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                            child: const Text('Cancel'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: FilledButton(
+                            onPressed: () {
+                              // Capture BOTH before _exitPlacementMode nulls them
+                              final pos = _placementPosition;
+                              final callback = _onPlacementConfirmed;
+                              _exitPlacementMode();
+                              callback?.call(pos);
+                            },
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Constants.redColor,
+                              foregroundColor: Constants.whiteColor,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                            child: const Text(
+                              'Confirm Location',
+                              style:
+                                  TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildZoomControls() {
     return Positioned(
       right: 16,
@@ -554,6 +787,37 @@ class _MapsScreenState extends State<MapsScreen> {
         title: const Text('APOORV 2025 Map'),
         backgroundColor: Constants.blackColor,
         actions: [
+          // Admin-only: Add new location pin
+          Consumer<AppConfigProvider>(
+            builder: (context, config, _) {
+              if (!config.isAdmin) return const SizedBox.shrink();
+              return IconButton(
+                icon: const Icon(Icons.add_location_alt,
+                    color: Constants.redColor),
+                tooltip: 'Add Location',
+                onPressed: () {
+                  _enterPlacementMode(
+                    initialPosition: mapController.camera.center,
+                    hint: 'Pan map to place the new location pin',
+                    onConfirmed: (position) {
+                      MarkerDialogs.showAddLocationDialog(
+                        context: context,
+                        position: position,
+                        selectedMarkerColor: selectedMarkerColor,
+                        selectedTextColor: selectedTextColor,
+                        onMarkerAdded: (newMarker) {
+                          setState(() {
+                            markers.add(newMarker);
+                          });
+                        },
+                        onColorsSelected: _handleColorSelection,
+                      );
+                    },
+                  );
+                },
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.event, color: Constants.redColor),
             tooltip: 'View All Events',
@@ -570,6 +834,19 @@ class _MapsScreenState extends State<MapsScreen> {
               );
             },
           ),
+          // ─── TEMPORARY — remove after Supabase → Firestore migration ───
+          // Consumer<AppConfigProvider>(
+          //   builder: (context, config, _) {
+          //     if (!config.isAdmin) return const SizedBox.shrink();
+          //     return IconButton(
+          //       icon: const Icon(Icons.upload_rounded, color: Colors.amber),
+          //       tooltip: 'Migrate from Supabase (temp)',
+          //       onPressed: () =>
+          //           MigrationService.showMigrationDialog(context),
+          //     );
+          //   },
+          // ),
+          // ───────────────────────────────────────────────────────────────
           IconButton(
             icon: Icon(_isSatelliteMode ? Icons.map : Icons.satellite),
             color: Constants.redColor,
@@ -595,7 +872,16 @@ class _MapsScreenState extends State<MapsScreen> {
               ),
               keepAlive: true,
               backgroundColor: Constants.blackColor,
-              cameraConstraint: CameraConstraint.contain(bounds: mapBounds),
+              onPositionChanged: (camera, hasGesture) {
+                if (_isPlacementMode) {
+                  setState(() {
+                    _placementPosition =
+                        camera.center ?? _placementPosition;
+                  });
+                }
+              },
+              cameraConstraint:
+                  CameraConstraint.contain(bounds: mapBounds),
             ),
             children: [
               TileLayer(
@@ -618,6 +904,44 @@ class _MapsScreenState extends State<MapsScreen> {
                 onEventAdded: _handleEventAdded,
                 onEventUpdated: _handleEventUpdated,
                 onEventDeleted: _handleEventDeleted,
+                onMoveLocation: (marker) {
+                  final config = Provider.of<AppConfigProvider>(context,
+                      listen: false);
+                  if (!config.isAdmin) return;
+                  _enterPlacementMode(
+                    initialPosition: marker.position,
+                    hint:
+                        'Pan map to new position for "${marker.locationName}"',
+                    onConfirmed: (newPosition) async {
+                      final updated = MapMarker(
+                        id: marker.id,
+                        locationName: marker.locationName,
+                        position: newPosition,
+                        markerColor: marker.markerColor,
+                        textColor: marker.textColor,
+                        events: marker.events,
+                        createdAt: marker.createdAt,
+                      );
+                      setState(() {
+                        final idx =
+                            markers.indexWhere((m) => m.id == marker.id);
+                        if (idx != -1) markers[idx] = updated;
+                      });
+                      // Capture before async gap — avoids BuildContext-across-async-gap lint
+                      final messenger = ScaffoldMessenger.of(context);
+                      try {
+                        await MapDataService.updateLocation(updated);
+                      } catch (e) {
+                        debugPrint('MapDataService: Error moving location: $e');
+                        if (mounted) {
+                          messenger.showSnackBar(
+                            SnackBar(content: Text('Failed to move: $e')),
+                          );
+                        }
+                      }
+                    },
+                  );
+                },
               ),
               // Academic block markers (BB, BC, BD)
               AcademicBlockMarkers(
@@ -627,6 +951,7 @@ class _MapsScreenState extends State<MapsScreen> {
             ],
           ),
           _buildZoomControls(),
+          if (_isPlacementMode) _buildPlacementOverlay(),
         ],
       ),
     );

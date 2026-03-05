@@ -1,12 +1,13 @@
+import 'providers/app_config_provider.dart';
 import 'providers/user_info_provider.dart';
 import 'screens/homepage/homepage.dart';
 import 'screens/signup-flow/welcome.dart';
 import 'screens/signup-flow/signup.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'widgets/dialog.dart';
 import 'widgets/snackbar.dart';
@@ -54,6 +55,11 @@ class _RoutingState extends State<Routing> {
       }
       if (hasName) {
         prov.userName = name;
+      }
+
+      // Fetch global app config once
+      if (context.mounted) {
+        Provider.of<AppConfigProvider>(context, listen: false).fetchConfig();
       }
 
       return hasName ? 2 : 1;

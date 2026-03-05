@@ -1,7 +1,9 @@
 import 'package:apoorv_app/utils/models/feed.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../../../constants.dart';
 // import '../../../../../../utils/Models/Feed.dart';
+import '../../../../../providers/app_config_provider.dart';
 import '../components/marker_dialogs.dart';
 
 class EventDetailsScreen extends StatelessWidget {
@@ -28,6 +30,26 @@ class EventDetailsScreen extends StatelessWidget {
           event.title,
           style: const TextStyle(color: Constants.whiteColor),
         ),
+        actions: [
+          Consumer<AppConfigProvider>(
+            builder: (context, config, _) {
+              if (!config.isAdmin) return const SizedBox.shrink();
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: Constants.redColor),
+                    onPressed: () => _showEditEventDialog(context),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Constants.redColor),
+                    onPressed: () => _showDeleteEventDialog(context),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(

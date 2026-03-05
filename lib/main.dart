@@ -1,9 +1,11 @@
 import 'package:apoorv_app/constants.dart';
+import 'package:apoorv_app/providers/app_config_provider.dart';
 import 'package:apoorv_app/providers/shopkeeper_provider.dart';
 import 'package:apoorv_app/screens/homepage/Maps/maps.dart';
 import 'package:apoorv_app/shopkeeper/shopkeeper_homepage.dart';
 import 'package:apoorv_app/shopkeeper/shopkeeper_points_screen.dart';
 import 'package:apoorv_app/shopkeeper/shopkeeper_profile_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'base_client.dart';
@@ -41,6 +43,12 @@ Future<void> main() async {
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Configure Firestore settings
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true,
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
 
   BaseClient(dotenv.get('BASE_URL'));
@@ -82,6 +90,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (context) => ShopkeeperProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => AppConfigProvider(),
         ),
       ],
       child: MaterialApp(

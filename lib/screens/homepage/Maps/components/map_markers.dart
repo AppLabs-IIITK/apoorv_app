@@ -13,6 +13,8 @@ class MapMarkerLayer extends StatelessWidget {
   final Function(Event) onEventAdded;
   final Function(Event) onEventUpdated;
   final Function(String) onEventDeleted;
+  /// If provided, shows a "Move Location" option in the long-press menu (admin only).
+  final Function(MapMarker)? onMoveLocation;
 
   const MapMarkerLayer({
     super.key,
@@ -23,6 +25,7 @@ class MapMarkerLayer extends StatelessWidget {
     required this.onEventAdded,
     required this.onEventUpdated,
     required this.onEventDeleted,
+    this.onMoveLocation,
   });
 
   @override
@@ -135,6 +138,18 @@ class MapMarkerLayer extends StatelessWidget {
                   },
                 ),
                 const SizedBox(height: 12),
+                if (onMoveLocation != null) ...[
+                  _buildOptionButton(
+                    context,
+                    'Move Location',
+                    Icons.open_with,
+                    () {
+                      Navigator.of(context).pop();
+                      onMoveLocation!(marker);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 _buildOptionButton(
                   context,
                   'Add Event',

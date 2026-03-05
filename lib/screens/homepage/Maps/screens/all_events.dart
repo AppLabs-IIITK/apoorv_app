@@ -1,8 +1,10 @@
 import 'package:apoorv_app/utils/models/feed.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
 import '../../../../../../constants.dart';
 // import '../../../../../../utils/Models/Feed.dart';
+import '../../../../../providers/app_config_provider.dart';
 import 'event_details.dart';
 
 class AllEventsScreen extends StatefulWidget {
@@ -277,13 +279,80 @@ class _AllEventsScreenState extends State<AllEventsScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    event.title,
-                    style: TextStyle(
-                      color: event.txtcolor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Consumer<AppConfigProvider>(
+                    builder: (context, config, _) {
+                      if (!config.isAdmin) {
+                        return Text(
+                          event.title,
+                          style: TextStyle(
+                            color: event.txtcolor,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        );
+                      }
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              event.title,
+                              style: TextStyle(
+                                color: event.txtcolor,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          PopupMenuButton<String>(
+                            icon: Icon(Icons.more_vert, color: event.txtcolor),
+                            onSelected: (value) {
+                              if (value == 'edit') {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => EventDetailsScreen(
+                                      event: event,
+                                      locationName: locationName,
+                                      onEventUpdated: widget.onEventUpdated,
+                                      onEventDeleted: widget.onEventDeleted,
+                                    ),
+                                  ),
+                                );
+                              } else if (value == 'delete') {
+                                widget.onEventDeleted(event.id);
+                                setState(() {
+                                  _allEvents.removeWhere((e) => e.id == event.id);
+                                  _filterEvents();
+                                });
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                value: 'edit',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.edit, size: 18),
+                                    SizedBox(width: 8),
+                                    Text('Edit'),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.delete, size: 18, color: Colors.red),
+                                    SizedBox(width: 8),
+                                    Text('Delete', style: TextStyle(color: Colors.red)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
                   ),
                   if (event.description != null &&
                       event.description!.isNotEmpty)

@@ -1,4 +1,4 @@
-import 'package:apoorv_app/screens/homepage/Maps/services/supabase_service.dart';
+import 'package:apoorv_app/screens/homepage/Maps/services/map_data_service.dart';
 import 'package:apoorv_app/utils/models/feed.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -65,7 +65,7 @@ class MarkerDialogs {
 
                       try {
                         final locationId =
-                            await SupabaseService.saveLocation(marker);
+                            await MapDataService.saveLocation(marker);
                         // Update marker with the generated ID
                         final updatedMarker = MapMarker(
                           id: locationId,
@@ -159,7 +159,7 @@ class MarkerDialogs {
                       );
 
                       try {
-                        await SupabaseService.updateLocation(updatedMarker);
+                        await MapDataService.updateLocation(updatedMarker);
                         onMarkerUpdated(updatedMarker);
                         if (context.mounted) {
                           Navigator.of(context).pop();
@@ -307,7 +307,7 @@ class MarkerDialogs {
                             );
 
                             try {
-                              final eventId = await SupabaseService.saveEvent(
+                              final eventId = await MapDataService.saveEvent(
                                   event, imageFileName);
 
                               // Update the event with the generated ID
@@ -477,7 +477,7 @@ class MarkerDialogs {
                             );
 
                             try {
-                              await SupabaseService.updateEvent(
+                              await MapDataService.updateEvent(
                                   updatedEvent, imageFileName);
                               onEventUpdated(updatedEvent);
                               if (context.mounted) {
@@ -554,7 +554,7 @@ class MarkerDialogs {
                       ),
                       onPressed: () async {
                         try {
-                          await SupabaseService.deleteLocation(locationId);
+                          await MapDataService.deleteLocation(locationId);
                           onMarkerDeleted();
                           if (context.mounted) {
                             Navigator.of(context).pop();
@@ -626,7 +626,7 @@ class MarkerDialogs {
                       ),
                       onPressed: () async {
                         try {
-                          await SupabaseService.deleteEvent(eventId);
+                          await MapDataService.deleteEvent(eventId);
                           onEventDeleted();
                           if (context.mounted) {
                             Navigator.of(context).pop();
@@ -809,8 +809,8 @@ class MarkerDialogs {
     if (image != null) {
       try {
         final imageFileName =
-            await SupabaseService.uploadEventImage(image.path);
-        final newImage = await SupabaseService.getEventImage(imageFileName);
+            await MapDataService.uploadEventImage(image.path);
+        final newImage = await MapDataService.getEventImage(imageFileName);
         if (newImage != null) {
           return (imageFileName, newImage);
         }

@@ -1,6 +1,9 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ── Helpers ────────────────────────────────────────────────────────────
+
     function isSignedIn() {
       return request.auth != null;
     }
@@ -9,7 +12,17 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Users collection: anyone can read; only the user can update their own doc.
+    /// Checks whether the signed-in user's email is in app_config/global.adminEmails.
+    /// Uses a single document get() — counts as 1 read against your quota.
+    function isAdmin() {
+      return isSignedIn() &&
+        request.auth.token.email in
+          get(/databases/$(database)/documents/app_config/global).data.adminEmails;
+    }
+
+    // ── Users ──────────────────────────────────────────────────────────────
+
+    // Anyone can read; only the user can update their own profile fields.
     match /users/{userId} {
       allow read: if true;
 
@@ -31,7 +44,36 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Everything else: public read, no writes.
+    // ── App Config ─────────────────────────────────────────────────────────
+
+    // Readable by any signed-in user (needed to resolve admin roles on-device).
+    // Written only by Firebase Console / Admin SDK — never from the client.
+    match /app_config/{document} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // ── Map — Locations ────────────────────────────────────────────────────
+
+    // Any authenticated user can read map markers.
+    // Only admins (adminEmails array in app_config/global) can write.
+    match /locations/{locationId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ── Map — Events ───────────────────────────────────────────────────────
+
+    // Any authenticated user can read events.
+    // Only admins can create, update, or delete events.
+    match /events/{eventId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ── Fallback ───────────────────────────────────────────────────────────
+
+    // Everything else: public read, no client writes.
     match /{document=**} {
       allow read: if true;
       allow write: if false;
