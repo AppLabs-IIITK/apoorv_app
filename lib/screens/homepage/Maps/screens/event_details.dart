@@ -1,27 +1,63 @@
 import 'package:apoorv_app/utils/models/feed.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../../../constants.dart';
-// import '../../../../../../utils/Models/Feed.dart';
 import '../../../../../providers/app_config_provider.dart';
 import '../components/marker_dialogs.dart';
+import '../services/map_data_service.dart';
 
-class EventDetailsScreen extends StatelessWidget {
+class EventDetailsScreen extends StatefulWidget {
   final Event event;
   final String locationName;
-  final Function(Event) onEventUpdated;
-  final Function(String) onEventDeleted;
 
   const EventDetailsScreen({
     super.key,
     required this.event,
     required this.locationName,
-    required this.onEventUpdated,
-    required this.onEventDeleted,
   });
 
   @override
+  State<EventDetailsScreen> createState() => _EventDetailsScreenState();
+}
+
+class _EventDetailsScreenState extends State<EventDetailsScreen> {
+  @override
   Widget build(BuildContext context) {
+    return StreamBuilder<DocumentSnapshot>(
+      stream: MapDataService.getEventStream(widget.event.id),
+      builder: (context, snapshot) {
+        // Build event from snapshot or use the original
+        Event displayEvent = widget.event;
+        if (snapshot.hasData && snapshot.data!.exists) {
+          final data = snapshot.data!.data() as Map<String, dynamic>;
+          // Rebuild the event with updated data
+          displayEvent = Event(
+            id: widget.event.id,
+            title: data['title'] ?? widget.event.title,
+            description: data['description'] ?? widget.event.description,
+            image: widget.event.image, // Keep the cached image
+            imageFile: data['image_file'] ?? widget.event.imageFile,
+            color: Color(data['color'] is String
+                ? int.parse(data['color'] as String)
+                : data['color'] as int),
+            txtcolor: Color(data['text_color'] is String
+                ? int.parse(data['text_color'] as String)
+                : data['text_color'] as int),
+            day: data['day'] as int,
+            time: data['time'] ?? widget.event.time,
+            locationId: data['location_id'] ?? widget.event.locationId,
+            roomNumber: data['room_number'] ?? widget.event.roomNumber,
+            createdAt: DateTime.parse(data['created_at'] as String),
+          );
+        }
+
+        return _buildScaffold(context, displayEvent);
+      },
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context, Event event) {
     return Scaffold(
       backgroundColor: Constants.blackColor,
       appBar: AppBar(
@@ -39,11 +75,11 @@ class EventDetailsScreen extends StatelessWidget {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.edit, color: Constants.redColor),
-                    onPressed: () => _showEditEventDialog(context),
+                    onPressed: () => _showEditEventDialog(context, event),
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete, color: Constants.redColor),
-                    onPressed: () => _showDeleteEventDialog(context),
+                    onPressed: () => _showDeleteEventDialog(context, event),
                   ),
                 ],
               );
@@ -60,7 +96,7 @@ class EventDetailsScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.grey[850], // Grayish background color
+                    color: Colors.grey[850],
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: Constants.blackColor.withOpacity(0.3),
@@ -92,7 +128,7 @@ class EventDetailsScreen extends StatelessWidget {
                   // Location and room
                   _buildInfoRow(
                     Icons.location_on,
-                    '$locationName${event.roomNumber.isNotEmpty ? ' - Room ${event.roomNumber}' : ''}',
+                    '${widget.locationName}${event.roomNumber.isNotEmpty ? ' - Room ${event.roomNumber}' : ''}',
                   ),
 
                   // Day and time
@@ -135,7 +171,6 @@ class EventDetailsScreen extends StatelessWidget {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        // Implement share functionality
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Share functionality coming soon!'),
@@ -184,22 +219,20 @@ class EventDetailsScreen extends StatelessWidget {
     );
   }
 
-  void _showEditEventDialog(BuildContext context) {
+  void _showEditEventDialog(BuildContext context, Event event) {
     MarkerDialogs.showEditEventDialog(
       context: context,
       event: event,
-      locationName: locationName,
-      onEventUpdated: onEventUpdated,
+      locationName: widget.locationName,
       onColorsSelected: (_, __) {},
     );
   }
 
-  void _showDeleteEventDialog(BuildContext context) {
+  void _showDeleteEventDialog(BuildContext context, Event event) {
     MarkerDialogs.showDeleteEventDialog(
       context: context,
       eventId: event.id,
       onEventDeleted: () {
-        onEventDeleted(event.id);
         Navigator.of(context).pop(); // Return to previous screen
       },
     );

@@ -9,14 +9,10 @@ import 'event_details.dart';
 
 class AllEventsScreen extends StatefulWidget {
   final List<MapMarker> markers;
-  final Function(Event) onEventUpdated;
-  final Function(String) onEventDeleted;
 
   const AllEventsScreen({
     super.key,
     required this.markers,
-    required this.onEventUpdated,
-    required this.onEventDeleted,
   });
 
   @override
@@ -244,8 +240,6 @@ class _AllEventsScreenState extends State<AllEventsScreen>
             builder: (context) => EventDetailsScreen(
               event: event,
               locationName: locationName,
-              onEventUpdated: widget.onEventUpdated,
-              onEventDeleted: widget.onEventDeleted,
             ),
           ),
         );
@@ -314,13 +308,10 @@ class _AllEventsScreenState extends State<AllEventsScreen>
                                     builder: (context) => EventDetailsScreen(
                                       event: event,
                                       locationName: locationName,
-                                      onEventUpdated: widget.onEventUpdated,
-                                      onEventDeleted: widget.onEventDeleted,
                                     ),
                                   ),
                                 );
                               } else if (value == 'delete') {
-                                widget.onEventDeleted(event.id);
                                 setState(() {
                                   _allEvents.removeWhere((e) => e.id == event.id);
                                   _filterEvents();

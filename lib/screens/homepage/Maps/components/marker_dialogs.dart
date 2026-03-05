@@ -103,7 +103,6 @@ class MarkerDialogs {
     required MapMarker marker,
     required Color selectedMarkerColor,
     required Color selectedTextColor,
-    required Function(MapMarker) onMarkerUpdated,
     required Function(Color, Color) onColorsSelected,
   }) async {
     String locationName = marker.locationName;
@@ -160,7 +159,6 @@ class MarkerDialogs {
 
                       try {
                         await MapDataService.updateLocation(updatedMarker);
-                        onMarkerUpdated(updatedMarker);
                         if (context.mounted) {
                           Navigator.of(context).pop();
                         }
@@ -188,7 +186,6 @@ class MarkerDialogs {
     required String locationName,
     required Color selectedColor,
     required Color selectedTextColor,
-    required Function(Event) onEventAdded,
     required Function(Color, Color) onColorsSelected,
   }) async {
     String title = '';
@@ -307,26 +304,9 @@ class MarkerDialogs {
                             );
 
                             try {
-                              final eventId = await MapDataService.saveEvent(
+                              await MapDataService.saveEvent(
                                   event, imageFileName);
 
-                              // Update the event with the generated ID
-                              final updatedEvent = Event(
-                                id: eventId,
-                                title: event.title,
-                                description: event.description,
-                                image: event.image,
-                                imageFile: event.imageFile,
-                                color: event.color,
-                                txtcolor: event.txtcolor,
-                                day: event.day,
-                                time: event.time,
-                                locationId: event.locationId,
-                                roomNumber: event.roomNumber,
-                                createdAt: event.createdAt,
-                              );
-
-                              onEventAdded(updatedEvent);
                               if (context.mounted) {
                                 Navigator.of(context).pop();
                               }
@@ -358,7 +338,6 @@ class MarkerDialogs {
     required BuildContext context,
     required Event event,
     required String locationName,
-    required Function(Event) onEventUpdated,
     required Function(Color, Color) onColorsSelected,
   }) async {
     String title = event.title;
@@ -479,7 +458,6 @@ class MarkerDialogs {
                             try {
                               await MapDataService.updateEvent(
                                   updatedEvent, imageFileName);
-                              onEventUpdated(updatedEvent);
                               if (context.mounted) {
                                 Navigator.of(context).pop();
                               }
@@ -510,7 +488,6 @@ class MarkerDialogs {
   static Future<void> showDeleteLocationDialog({
     required BuildContext context,
     required String locationId,
-    required Function() onMarkerDeleted,
   }) async {
     return showDialog(
       context: context,
@@ -555,7 +532,6 @@ class MarkerDialogs {
                       onPressed: () async {
                         try {
                           await MapDataService.deleteLocation(locationId);
-                          onMarkerDeleted();
                           if (context.mounted) {
                             Navigator.of(context).pop();
                           }

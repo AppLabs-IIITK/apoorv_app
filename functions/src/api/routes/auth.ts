@@ -11,7 +11,8 @@ const GOOGLE_CLIENT_ID =
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 interface GoogleAuthRequest {
-  idToken: string;
+  idToken?: string;
+  firebaseIdToken?: string;
 }
 
 interface AuthResponse {
@@ -71,24 +72,35 @@ async function verifyGoogleIdToken(idToken: string) {
 
 router.post("/google", async (req, res) => {
   try {
-    const {idToken}: GoogleAuthRequest = req.body;
+    const {idToken, firebaseIdToken}: GoogleAuthRequest = req.body;
 
-    if (!idToken) {
+    if (!idToken && !firebaseIdToken) {
       res.status(400).json({
         error: "Bad Request",
-        message: "idToken is required",
+        message: "idToken or firebaseIdToken is required",
       });
       return;
     }
 
     let googleData: {email: string; emailVerified: boolean; photoUrl: string | null};
     try {
-      googleData = await verifyGoogleIdToken(idToken);
+      if (idToken) {
+        googleData = await verifyGoogleIdToken(idToken);
+      } else if (firebaseIdToken) {
+        const decodedToken = await admin.auth().verifyIdToken(firebaseIdToken);
+        googleData = {
+          email: decodedToken.email || "",
+          emailVerified: decodedToken.email_verified || false,
+          photoUrl: decodedToken.picture || null,
+        };
+      } else {
+        throw new Error("Missing token");
+      }
     } catch (error) {
-      console.error("Failed to verify Google ID token:", error);
+      console.error("Failed to verify ID token:", error);
       res.status(401).json({
         error: "Unauthorized",
-        message: "Invalid Google ID token",
+        message: "Invalid ID token",
       });
       return;
     }

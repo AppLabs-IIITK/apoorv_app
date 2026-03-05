@@ -21,6 +21,25 @@ class MapDataService {
   static final _imageCache = MarkerCacheManager();
 
   // ─────────────────────────────────────────
+  // Firestore Streams
+  // ─────────────────────────────────────────
+
+  /// Returns a stream of all locations ordered by creation date.
+  static Stream<QuerySnapshot> getLocationsStream() {
+    return _firestore.collection('locations').orderBy('created_at').snapshots();
+  }
+
+  /// Returns a stream of all events ordered by creation date.
+  static Stream<QuerySnapshot> getEventsStream() {
+    return _firestore.collection('events').orderBy('created_at').snapshots();
+  }
+
+  /// Returns a stream of a specific event by ID.
+  static Stream<DocumentSnapshot> getEventStream(String eventId) {
+    return _firestore.collection('events').doc(eventId).snapshots();
+  }
+
+  // ─────────────────────────────────────────
   // Model builders — called by streams in maps.dart
   // ─────────────────────────────────────────
 

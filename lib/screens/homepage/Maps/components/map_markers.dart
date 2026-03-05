@@ -8,11 +8,6 @@ import 'marker_dialogs.dart';
 class MapMarkerLayer extends StatelessWidget {
   final List<MapMarker> markers;
   final Function(MapMarker) onMarkerTapped;
-  final Function(MapMarker) onMarkerUpdated;
-  final Function(String) onMarkerDeleted;
-  final Function(Event) onEventAdded;
-  final Function(Event) onEventUpdated;
-  final Function(String) onEventDeleted;
   /// If provided, shows a "Move Location" option in the long-press menu (admin only).
   final Function(MapMarker)? onMoveLocation;
 
@@ -20,11 +15,6 @@ class MapMarkerLayer extends StatelessWidget {
     super.key,
     required this.markers,
     required this.onMarkerTapped,
-    required this.onMarkerUpdated,
-    required this.onMarkerDeleted,
-    required this.onEventAdded,
-    required this.onEventUpdated,
-    required this.onEventDeleted,
     this.onMoveLocation,
   });
 
@@ -208,7 +198,6 @@ class MapMarkerLayer extends StatelessWidget {
       marker: marker,
       selectedMarkerColor: marker.markerColor,
       selectedTextColor: marker.textColor,
-      onMarkerUpdated: onMarkerUpdated,
       onColorsSelected: (markerColor, textColor) {},
     );
   }
@@ -220,7 +209,6 @@ class MapMarkerLayer extends StatelessWidget {
       locationName: marker.locationName,
       selectedColor: marker.markerColor,
       selectedTextColor: marker.textColor,
-      onEventAdded: onEventAdded,
       onColorsSelected: (markerColor, textColor) {},
     );
   }
@@ -229,7 +217,6 @@ class MapMarkerLayer extends StatelessWidget {
     MarkerDialogs.showDeleteLocationDialog(
       context: context,
       locationId: marker.id,
-      onMarkerDeleted: () => onMarkerDeleted(marker.id),
     );
   }
 }

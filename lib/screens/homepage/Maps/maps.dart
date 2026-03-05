@@ -87,20 +87,12 @@ class _MapsScreenState extends State<MapsScreen> {
   /// Fires [_rebuildMarkers] whenever either collection changes.
   /// Firestore offline persistence means this works seamlessly offline too.
   void _setupStreams() {
-    _locationsSubscription = FirebaseFirestore.instance
-        .collection('locations')
-        .orderBy('created_at')
-        .snapshots()
-        .listen((snap) {
+    _locationsSubscription = MapDataService.getLocationsStream().listen((snap) {
       _locationsDocs = snap.docs;
       _rebuildMarkers();
     });
 
-    _eventsSubscription = FirebaseFirestore.instance
-        .collection('events')
-        .orderBy('created_at')
-        .snapshots()
-        .listen((snap) {
+    _eventsSubscription = MapDataService.getEventsStream().listen((snap) {
       _eventsDocs = snap.docs;
       _rebuildMarkers();
     });
@@ -115,135 +107,20 @@ class _MapsScreenState extends State<MapsScreen> {
     if (mounted) {
       setState(() {
         markers = newMarkers;
-        if (selectedMarker != null) _updateFilteredEvents();
-      });
-    }
-  }
-
-  void _handleMarkerUpdate(MapMarker updatedMarker) {
-    setState(() {
-      final index = markers.indexWhere((m) => m.id == updatedMarker.id);
-      if (index != -1) {
-        markers[index] = updatedMarker;
-
-        // If this was the selected marker, update it and the filtered events
-        if (selectedMarker != null && selectedMarker!.id == updatedMarker.id) {
-          selectedMarker = updatedMarker;
-          _updateFilteredEvents();
-        }
-      }
-    });
-  }
-
-  void _handleMarkerDelete(String markerId) {
-    setState(() {
-      markers.removeWhere((m) => m.id == markerId);
-
-      // If this was the selected marker, clear the selection
-      if (selectedMarker != null && selectedMarker!.id == markerId) {
-        selectedMarker = null;
-        filteredEvents = [];
-      }
-    });
-  }
-
-  void _handleEventAdded(Event event) {
-    // Find the marker this event belongs to
-    final index = markers.indexWhere((m) => m.id == event.locationId);
-    if (index != -1) {
-      final marker = markers[index];
-      final updatedEvents = [...marker.events, event];
-
-      final updatedMarker = MapMarker(
-        id: marker.id,
-        locationName: marker.locationName,
-        position: marker.position,
-        markerColor: marker.markerColor,
-        textColor: marker.textColor,
-        events: updatedEvents,
-        createdAt: marker.createdAt,
-      );
-
-      setState(() {
-        markers[index] = updatedMarker;
-
-        // If this was the selected marker, update it and the filtered events
-        if (selectedMarker != null && selectedMarker!.id == marker.id) {
-          selectedMarker = updatedMarker;
-          _updateFilteredEvents();
+        // If there's a selected marker, try to update it with the new data
+        if (selectedMarker != null) {
+          try {
+            selectedMarker = newMarkers.firstWhere(
+              (m) => m.id == selectedMarker!.id,
+            );
+            _updateFilteredEvents();
+          } catch (e) {
+            // Marker was deleted, clear selection
+            selectedMarker = null;
+            filteredEvents = [];
+          }
         }
       });
-    }
-  }
-
-  void _handleEventUpdated(Event updatedEvent) {
-    // Find the marker this event belongs to
-    final markerIndex =
-        markers.indexWhere((m) => m.id == updatedEvent.locationId);
-    if (markerIndex != -1) {
-      final marker = markers[markerIndex];
-      final eventIndex =
-          marker.events.indexWhere((e) => e.id == updatedEvent.id);
-
-      if (eventIndex != -1) {
-        final updatedEvents = List<Event>.from(marker.events);
-        updatedEvents[eventIndex] = updatedEvent;
-
-        final updatedMarker = MapMarker(
-          id: marker.id,
-          locationName: marker.locationName,
-          position: marker.position,
-          markerColor: marker.markerColor,
-          textColor: marker.textColor,
-          events: updatedEvents,
-          createdAt: marker.createdAt,
-        );
-
-        setState(() {
-          markers[markerIndex] = updatedMarker;
-
-          // If this was the selected marker, update it and the filtered events
-          if (selectedMarker != null && selectedMarker!.id == marker.id) {
-            selectedMarker = updatedMarker;
-            _updateFilteredEvents();
-          }
-        });
-      }
-    }
-  }
-
-  void _handleEventDeleted(String eventId) {
-    // Find the marker containing this event
-    for (int i = 0; i < markers.length; i++) {
-      final marker = markers[i];
-      final eventIndex = marker.events.indexWhere((e) => e.id == eventId);
-
-      if (eventIndex != -1) {
-        final updatedEvents = List<Event>.from(marker.events)
-          ..removeAt(eventIndex);
-
-        final updatedMarker = MapMarker(
-          id: marker.id,
-          locationName: marker.locationName,
-          position: marker.position,
-          markerColor: marker.markerColor,
-          textColor: marker.textColor,
-          events: updatedEvents,
-          createdAt: marker.createdAt,
-        );
-
-        setState(() {
-          markers[i] = updatedMarker;
-
-          // If this was the selected marker, update it and the filtered events
-          if (selectedMarker != null && selectedMarker!.id == marker.id) {
-            selectedMarker = updatedMarker;
-            _updateFilteredEvents();
-          }
-        });
-
-        break;
-      }
     }
   }
 
@@ -342,7 +219,6 @@ class _MapsScreenState extends State<MapsScreen> {
                                   locationName: selectedMarker!.locationName,
                                   selectedColor: selectedMarker!.markerColor,
                                   selectedTextColor: selectedMarker!.textColor,
-                                  onEventAdded: _handleEventAdded,
                                   onColorsSelected: _handleColorSelection,
                                 );
                               },
@@ -465,8 +341,6 @@ class _MapsScreenState extends State<MapsScreen> {
             builder: (context) => EventDetailsScreen(
               event: event,
               locationName: selectedMarker!.locationName,
-              onEventUpdated: _handleEventUpdated,
-              onEventDeleted: _handleEventDeleted,
             ),
           ),
         );
@@ -827,8 +701,6 @@ class _MapsScreenState extends State<MapsScreen> {
                 MaterialPageRoute(
                   builder: (context) => AllEventsScreen(
                     markers: markers,
-                    onEventUpdated: _handleEventUpdated,
-                    onEventDeleted: _handleEventDeleted,
                   ),
                 ),
               );
@@ -899,11 +771,6 @@ class _MapsScreenState extends State<MapsScreen> {
               MapMarkerLayer(
                 markers: regularMarkers,
                 onMarkerTapped: _handleMarkerTapped,
-                onMarkerUpdated: _handleMarkerUpdate,
-                onMarkerDeleted: _handleMarkerDelete,
-                onEventAdded: _handleEventAdded,
-                onEventUpdated: _handleEventUpdated,
-                onEventDeleted: _handleEventDeleted,
                 onMoveLocation: (marker) {
                   final config = Provider.of<AppConfigProvider>(context,
                       listen: false);
