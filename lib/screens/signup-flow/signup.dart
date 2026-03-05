@@ -41,10 +41,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   void initState() {
     super.initState();
-    Provider.of<UserProvider>(context, listen: false)
-        .refreshGoogleServiceData();
+    // Defer provider notification until after the first frame —
+    // calling notifyListeners() synchronously during initState triggers
+    // "setState() called during build" because the widget isn't mounted yet.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        Provider.of<UserProvider>(context, listen: false)
+            .refreshGoogleServiceData();
+      }
+    });
 
-    // Prefill roll number from Firestore (created during login) and keep it read-only.
     _prefillRollNumber();
     popScreen(context);
   }

@@ -415,15 +415,12 @@ class _PointsScreenState extends State<PointsScreen> {
                                         Align(
                                           alignment: Alignment.centerRight,
                                           child: TextButton(
-                                            onPressed: providerContext
-                                                    .transactions.isNotEmpty
-                                                ? () {
-                                                    Navigator.of(context)
-                                                        .restorablePushNamed(
-                                                            AllTransactions
-                                                                .routeName);
-                                                  }
-                                                : null, // Disable the button if there are no transactions
+                                            onPressed: () {
+                                              Navigator.of(context)
+                                                  .restorablePushNamed(
+                                                      AllTransactions
+                                                          .routeName);
+                                            },
                                             style: const ButtonStyle(),
                                             child: const Text(
                                               'View More ->',

@@ -196,7 +196,14 @@ class UserProvider extends ChangeNotifier {
             'formattedTime': formattedTime,
           });
 
-          if (txn['from'] == uid) {
+          final String fromEmail = (txn['fromEmail'] ?? '').toString().trim().toLowerCase();
+          final String toEmail = (txn['toEmail'] ?? '').toString().trim().toLowerCase();
+          final String currentEmail = userEmail.trim().toLowerCase();
+
+          final bool isDebit = (fromEmail.isNotEmpty && fromEmail == currentEmail) || txn['from'] == uid;
+          final bool isCredit = (toEmail.isNotEmpty && toEmail == currentEmail) || txn['to'] == uid;
+
+          if (isDebit) {
             transactions.add(TransactionsWidget(
               name: txn['toName'],
               date: formattedTime,
@@ -207,7 +214,7 @@ class UserProvider extends ChangeNotifier {
               fromEmail: txn['fromEmail']?.toString(),
               toEmail: txn['toEmail']?.toString(),
             ));
-          } else if (txn['to'] == uid) {
+          } else if (isCredit) {
             transactions.add(TransactionsWidget(
               name: txn['fromName'],
               date: formattedTime,

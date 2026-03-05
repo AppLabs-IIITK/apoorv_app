@@ -35,6 +35,7 @@ service cloud.firestore {
         return request.resource.data.diff(resource.data).changedKeys().hasOnly([
           'name',
           'nameLower',
+          'phone',
           'photoURL'
         ]);
       }

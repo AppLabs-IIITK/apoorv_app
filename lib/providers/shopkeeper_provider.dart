@@ -123,14 +123,14 @@ class ShopkeeperProvider extends ChangeNotifier {
           }
           String formattedTime =
               DateFormat("MMMM d, yyyy 'at' h:mm a").format(utcTime);
-          if (txn['from'] == uid) {
+          if (txn['from'] == uid || (txn['fromEmail'] != null && txn['fromEmail'].toString().trim().toLowerCase() == shopkeeperEmail.trim().toLowerCase())) {
             transactions.add(TransactionsWidget(
               name: txn['toName'],
               date: formattedTime,
               type: 'debit',
               points: txn['transactionValue'],
             ));
-          } else if (txn['to'] == uid) {
+          } else if (txn['to'] == uid || (txn['toEmail'] != null && txn['toEmail'].toString().trim().toLowerCase() == shopkeeperEmail.trim().toLowerCase())) {
             transactions.add(TransactionsWidget(
               name: txn['fromName'],
               date: formattedTime,
