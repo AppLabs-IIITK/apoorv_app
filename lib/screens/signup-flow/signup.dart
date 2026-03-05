@@ -178,7 +178,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                       validator: (value) {
                                         if (value == null ||
                                             value.isEmpty ||
-                                            !RegExp(r"(2021|2022|2023|2024)(bcs|bec|bcy|bcd)0\d{3}")
+                                            !RegExp(r"(2021|2022|2023|2024|2025)(bcs|bec|bcy|bcd)0\d{3}")
                                                 .hasMatch(
                                                     value.toLowerCase())) {
                                           return "You know the format";
