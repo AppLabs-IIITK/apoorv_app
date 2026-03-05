@@ -38,6 +38,7 @@ dependencies:
   firebase_core: ^2.25.4
   flutter_dotenv: ^5.1.0
   firebase_auth: ^4.17.4
+  cloud_firestore: ^4.17.5
   flutter_svg: ^2.0.10+1
   qr_flutter: ^4.1.0
   mobile_scanner: ^4.0.1
