@@ -69,6 +69,8 @@ class _MapsScreenState extends State<MapsScreen> {
   StreamSubscription<QuerySnapshot>? _eventsSubscription;
   List<QueryDocumentSnapshot> _locationsDocs = [];
   List<QueryDocumentSnapshot> _eventsDocs = [];
+  bool _locationsLoaded = false;
+  bool _eventsLoaded = false;
 
   @override
   void initState() {
@@ -87,23 +89,95 @@ class _MapsScreenState extends State<MapsScreen> {
   /// Fires [_rebuildMarkers] whenever either collection changes.
   /// Firestore offline persistence means this works seamlessly offline too.
   void _setupStreams() {
-    _locationsSubscription = MapDataService.getLocationsStream().listen((snap) {
-      _locationsDocs = snap.docs;
-      _rebuildMarkers();
-    });
+    _locationsSubscription = MapDataService.getLocationsStream().listen(
+      (snap) {
+        _locationsDocs = snap.docs;
+        _locationsLoaded = true;
+        _rebuildMarkers();
+      },
+      onError: (error) {
+        debugPrint('🔴 Locations stream error: $error');
+        // Stream errored — fall back to a one-off get()
+        _fallbackFetchLocations();
+      },
+    );
 
-    _eventsSubscription = MapDataService.getEventsStream().listen((snap) {
-      _eventsDocs = snap.docs;
-      _rebuildMarkers();
+    _eventsSubscription = MapDataService.getEventsStream().listen(
+      (snap) {
+        _eventsDocs = snap.docs;
+        _eventsLoaded = true;
+        _rebuildMarkers();
+      },
+      onError: (error) {
+        debugPrint('🔴 Events stream error: $error');
+        // Stream errored — fall back to a one-off get()
+        _fallbackFetchEvents();
+      },
+    );
+
+    // Safety net: if neither stream has produced data within 5 seconds,
+    // do a manual one-off fetch. This catches silent failures on web.
+    Future.delayed(const Duration(seconds: 5), () {
+      if (!_locationsLoaded && mounted) {
+        debugPrint('⚠️ Locations stream did not emit in 5s — doing fallback fetch');
+        _fallbackFetchLocations();
+      }
+      if (!_eventsLoaded && mounted) {
+        debugPrint('⚠️ Events stream did not emit in 5s — doing fallback fetch');
+        _fallbackFetchEvents();
+      }
     });
+  }
+
+  /// One-off Firestore fetch for locations (fallback when stream fails).
+  Future<void> _fallbackFetchLocations() async {
+    try {
+      final snap = await FirebaseFirestore.instance
+          .collection('locations')
+          .orderBy('created_at')
+          .get();
+      if (mounted) {
+        _locationsDocs = snap.docs;
+        _locationsLoaded = true;
+        _rebuildMarkers();
+      }
+    } catch (e) {
+      debugPrint('🔴 Fallback locations fetch also failed: $e');
+    }
+  }
+
+  /// One-off Firestore fetch for events (fallback when stream fails).
+  Future<void> _fallbackFetchEvents() async {
+    try {
+      final snap = await FirebaseFirestore.instance
+          .collection('events')
+          .orderBy('created_at')
+          .get();
+      if (mounted) {
+        _eventsDocs = snap.docs;
+        _eventsLoaded = true;
+        _rebuildMarkers();
+      }
+    } catch (e) {
+      debugPrint('🔴 Fallback events fetch also failed: $e');
+    }
   }
 
   /// Converts the latest Firestore snapshot docs into [MapMarker] objects
   /// and triggers a rebuild. Called whenever either stream emits.
-  void _rebuildMarkers() async {
-    final events = await MapDataService.buildEventsFromDocs(_eventsDocs);
+  /// Only rebuilds once both streams have loaded at least once.
+  void _rebuildMarkers() {
+    // Wait for both streams to emit at least once
+    if (!_locationsLoaded || !_eventsLoaded) {
+      debugPrint('⏳ _rebuildMarkers skipped — locationsLoaded=$_locationsLoaded, eventsLoaded=$_eventsLoaded');
+      return;
+    }
+
+    debugPrint('🔄 _rebuildMarkers — ${_locationsDocs.length} locations, ${_eventsDocs.length} events');
+    final events = MapDataService.buildEventsFromDocs(_eventsDocs);
     final newMarkers =
         MapDataService.buildMarkersFromDocs(_locationsDocs, events);
+    debugPrint('✅ Built ${newMarkers.length} markers');
     if (mounted) {
       setState(() {
         markers = newMarkers;
@@ -354,7 +428,7 @@ class _MapsScreenState extends State<MapsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (event.image != null)
+            if (event.imageUrl != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8, left: 8, right: 8),
                 child: ClipRRect(
@@ -363,8 +437,18 @@ class _MapsScreenState extends State<MapsScreen> {
                     color: Colors.black,
                     width: double.infinity,
                     height: 150,
-                    child: Center(
-                      child: event.image,
+                    child: Image.network(
+                      event.imageUrl!,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const Center(
+                          child: CircularProgressIndicator(color: Constants.redColor),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.broken_image, color: Constants.creamColor,
+                      ),
                     ),
                   ),
                 ),
@@ -753,7 +837,7 @@ class _MapsScreenState extends State<MapsScreen> {
                 }
               },
               cameraConstraint:
-                  CameraConstraint.contain(bounds: mapBounds),
+                  CameraConstraint.containCenter(bounds: mapBounds),
             ),
             children: [
               TileLayer(

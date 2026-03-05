@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'marker_cache_service.dart';
 
 /// MapDataService handles all data persistence for the maps feature.
 ///
@@ -16,9 +15,6 @@ import 'marker_cache_service.dart';
 class MapDataService {
   static final _firestore = FirebaseFirestore.instance;
   static final _supabase = Supabase.instance.client;
-
-  // Image cache — still useful for Supabase Storage images
-  static final _imageCache = MarkerCacheManager();
 
   // ─────────────────────────────────────────
   // Firestore Streams
@@ -43,22 +39,21 @@ class MapDataService {
   // Model builders — called by streams in maps.dart
   // ─────────────────────────────────────────
 
-  /// Converts Firestore event docs → [Event] objects (loads images via cache).
-  static Future<List<Event>> buildEventsFromDocs(
-      List<QueryDocumentSnapshot> docs) async {
+  /// Converts Firestore event docs → [Event] objects.
+  /// Images are NOT loaded here — just the URL string is stored.
+  /// The UI uses CachedNetworkImage to display images lazily.
+  static List<Event> buildEventsFromDocs(
+      List<QueryDocumentSnapshot> docs) {
     final List<Event> events = [];
     for (final doc in docs) {
       final data = doc.data() as Map<String, dynamic>;
-      Image? eventImage;
       final imageFile = data['image_file'] as String?;
-      if (imageFile != null) {
-        eventImage = await getEventImage(imageFile);
-      }
+      final imageUrl = imageFile != null ? getEventImageUrl(imageFile) : null;
       events.add(Event(
         id: doc.id,
         title: data['title'] ?? '',
         description: data['description'],
-        image: eventImage,
+        imageUrl: imageUrl,
         imageFile: imageFile,
         color: Color(data['color'] is String
             ? int.parse(data['color'] as String)
@@ -139,36 +134,6 @@ class MapDataService {
 
   static String getMarkerImageUrl(String fileNameOrUrl) =>
       getImageUrl(fileNameOrUrl, 'marker_images');
-
-  /// Gets a marker image, using local file cache first.
-  static Future<Image?> getMarkerImage(String fileNameOrUrl) async {
-    try {
-      final imageUrl = getMarkerImageUrl(fileNameOrUrl);
-      final cached = await _imageCache.getCachedMarkerImage(imageUrl);
-      if (cached != null) return cached;
-      final path = await _imageCache.cacheMarkerImage(imageUrl);
-      if (path != null) return Image.file(File(path));
-      return Image.network(imageUrl);
-    } catch (e) {
-      debugPrint('MapDataService: Error getting marker image: $e');
-      return null;
-    }
-  }
-
-  /// Gets an event image, using local file cache first.
-  static Future<Image?> getEventImage(String fileNameOrUrl) async {
-    try {
-      final imageUrl = getEventImageUrl(fileNameOrUrl);
-      final cached = await _imageCache.getCachedEventImage(imageUrl);
-      if (cached != null) return cached;
-      final path = await _imageCache.cacheEventImage(imageUrl);
-      if (path != null) return Image.file(File(path));
-      return Image.network(imageUrl);
-    } catch (e) {
-      debugPrint('MapDataService: Error getting event image: $e');
-      return null;
-    }
-  }
 
   // ─────────────────────────────────────────
   // Firestore CRUD — Locations

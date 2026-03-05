@@ -194,7 +194,7 @@ class MarkerDialogs {
     String time = '';
     int day = 1;
     String? imageFileName;
-    Image? eventImage;
+    String? eventImageUrl;
     Color eventColor = selectedColor;
     Color textColor = selectedTextColor;
 
@@ -258,7 +258,7 @@ class MarkerDialogs {
                         },
                       ),
                       const SizedBox(height: 16),
-                      if (eventImage != null) _buildImagePreview(eventImage!),
+                      if (eventImageUrl != null) _buildImagePreview(eventImageUrl!),
                       _buildActionButtons(
                         context: context,
                         onImagePicked: () async {
@@ -266,7 +266,7 @@ class MarkerDialogs {
                           if (result != null) {
                             imageFileName = result.$1;
                             setState(() {
-                              eventImage = result.$2;
+                              eventImageUrl = result.$2;
                             });
                           }
                         },
@@ -292,7 +292,7 @@ class MarkerDialogs {
                               id: '', // Let Supabase generate the UUID
                               title: title,
                               description: description,
-                              image: eventImage,
+                              imageUrl: eventImageUrl,
                               imageFile: imageFileName,
                               color: eventColor,
                               txtcolor: textColor,
@@ -346,7 +346,7 @@ class MarkerDialogs {
     String time = event.time;
     int day = event.day;
     String? imageFileName;
-    Image? eventImage = event.image;
+    String? eventImageUrl = event.imageUrl;
     Color eventColor = event.color;
     Color textColor = event.txtcolor;
 
@@ -410,7 +410,7 @@ class MarkerDialogs {
                         },
                       ),
                       const SizedBox(height: 16),
-                      if (eventImage != null) _buildImagePreview(eventImage!),
+                      if (eventImageUrl != null) _buildImagePreview(eventImageUrl!),
                       _buildActionButtons(
                         context: context,
                         onImagePicked: () async {
@@ -418,7 +418,7 @@ class MarkerDialogs {
                           if (result != null) {
                             imageFileName = result.$1;
                             setState(() {
-                              eventImage = result.$2;
+                              eventImageUrl = result.$2;
                             });
                           }
                         },
@@ -444,7 +444,7 @@ class MarkerDialogs {
                               id: event.id,
                               title: title,
                               description: description,
-                              image: eventImage,
+                              imageUrl: eventImageUrl,
                               imageFile: imageFileName ?? event.imageFile,
                               color: eventColor,
                               txtcolor: textColor,
@@ -705,14 +705,26 @@ class MarkerDialogs {
     );
   }
 
-  static Widget _buildImagePreview(Image image) {
+  static Widget _buildImagePreview(String imageUrl) {
     return Container(
       height: 120,
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 16),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
-        child: image,
+        child: Image.network(
+          imageUrl,
+          fit: BoxFit.cover,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return const Center(
+              child: CircularProgressIndicator(color: Constants.redColor),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) => const Icon(
+            Icons.broken_image, color: Constants.creamColor,
+          ),
+        ),
       ),
     );
   }
@@ -777,7 +789,8 @@ class MarkerDialogs {
   }
 
   // Helper methods
-  static Future<(String, Image)?> _pickEventImage() async {
+  /// Picks an image, uploads it, and returns (fileName, imageUrl).
+  static Future<(String, String)?> _pickEventImage() async {
     final ImagePicker imagePicker = ImagePicker();
     final XFile? image = await imagePicker.pickImage(
       source: ImageSource.gallery,
@@ -786,10 +799,8 @@ class MarkerDialogs {
       try {
         final imageFileName =
             await MapDataService.uploadEventImage(image.path);
-        final newImage = await MapDataService.getEventImage(imageFileName);
-        if (newImage != null) {
-          return (imageFileName, newImage);
-        }
+        final imageUrl = MapDataService.getEventImageUrl(imageFileName);
+        return (imageFileName, imageUrl);
       } catch (e) {
         debugPrint('Failed to upload image: $e');
       }

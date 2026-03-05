@@ -20,7 +20,7 @@ class Event {
   final String id;
   final String title;
   final String? description;
-  final Image? image;
+  final String? imageUrl;
   final String? imageFile;
   final Color color;
   final Color txtcolor;
@@ -34,7 +34,7 @@ class Event {
     required this.id,
     required this.title,
     this.description,
-    this.image,
+    this.imageUrl,
     this.imageFile,
     required this.color,
     required this.txtcolor,

@@ -36,7 +36,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             id: widget.event.id,
             title: data['title'] ?? widget.event.title,
             description: data['description'] ?? widget.event.description,
-            image: widget.event.image, // Keep the cached image
+            imageUrl: widget.event.imageUrl, // Keep the cached image URL
             imageFile: data['image_file'] ?? widget.event.imageFile,
             color: Color(data['color'] is String
                 ? int.parse(data['color'] as String)
@@ -91,7 +91,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (event.image != null)
+            if (event.imageUrl != null)
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Container(
@@ -104,8 +104,21 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     ),
                   ),
                   width: double.infinity,
-                  child: Center(
-                    child: event.image,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      event.imageUrl!,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const Center(
+                          child: CircularProgressIndicator(color: Constants.redColor),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) => const Center(
+                        child: Icon(Icons.broken_image, color: Constants.creamColor, size: 48),
+                      ),
+                    ),
                   ),
                 ),
               ),

@@ -71,7 +71,7 @@ class _AllEventsScreenState extends State<AllEventsScreen>
             id: event.id,
             title: event.title,
             description: event.description,
-            image: event.image,
+            imageUrl: event.imageUrl,
             imageFile: event.imageFile,
             color: event.color,
             txtcolor: event.txtcolor,
@@ -253,7 +253,7 @@ class _AllEventsScreenState extends State<AllEventsScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (event.image != null)
+            if (event.imageUrl != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8, left: 8, right: 8),
                 child: ClipRRect(
@@ -262,8 +262,18 @@ class _AllEventsScreenState extends State<AllEventsScreen>
                     color: Colors.black,
                     width: double.infinity,
                     height: 150,
-                    child: Center(
-                      child: event.image,
+                    child: Image.network(
+                      event.imageUrl!,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const Center(
+                          child: CircularProgressIndicator(color: Constants.redColor),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.broken_image, color: Constants.creamColor,
+                      ),
                     ),
                   ),
                 ),
