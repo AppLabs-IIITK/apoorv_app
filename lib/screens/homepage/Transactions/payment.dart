@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../constants.dart';
 import '../../../widgets/profile_avatar.dart';
+import 'inspect_transactions.dart';
 
 class Payment extends StatefulWidget {
   static const routeName = '/payment';
@@ -130,6 +131,28 @@ class _PaymentState extends State<Payment> {
                 return Scaffold(
                   appBar: AppBar(
                       // title: const IconButton(onPressed: null, icon: Icon(Icons.arrow_back)),
+                      actions: [
+                        IconButton(
+                          onPressed: () {
+                            final receiver = context.read<ReceiverProvider>();
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => InspectTransactionsScreen(
+                                  uid: receiver.uid,
+                                  name: receiver.userName,
+                                  email: receiver.userEmail,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.receipt_long,
+                            size: 18,
+                            color: Colors.white54,
+                          ),
+                          tooltip: 'Inspect',
+                        ),
+                      ],
                       ),
                   body: Padding(
                     padding: EdgeInsets.only(
