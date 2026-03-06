@@ -35,6 +35,8 @@ class APICalls {
       final fullName = (data['fullName'] as String?)?.trim();
       final name = (data['name'] as String?)?.trim();
       final pointsValue = data['points'];
+      final shopPointsValue = data['shopPoints'];
+      final isShopkeeperValue = data['isShopkeeper'];
 
       return {
         'success': true,
@@ -47,6 +49,9 @@ class APICalls {
         'collegeName': data['collegeName'] ?? 'IIIT Kottayam',
         'phone': data['phone'] ?? '',
         'points': pointsValue is int ? pointsValue : 0,
+        'shopPoints': shopPointsValue is int ? shopPointsValue : 0,
+        'isShopkeeper':
+            isShopkeeperValue is bool ? isShopkeeperValue : false,
         // App screens/providers currently expect this key.
         'fullName': (name != null && name.isNotEmpty)
             ? name
@@ -222,6 +227,7 @@ class APICalls {
     String to,
     int amount,
     // String idToken,
+    {String? mode}
   ) async {
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -244,6 +250,7 @@ class APICalls {
           'from': from,
           'to': to,
           'amount': amount,
+          if (mode != null) 'mode': mode,
         }),
       );
 

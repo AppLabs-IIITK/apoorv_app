@@ -89,7 +89,7 @@ class ShopkeeperProvider extends ChangeNotifier {
     if (res['success']) {
       updateEmail(res['email']);
       updateProfilePhoto(res['photoUrl']);
-      updatePoints(res['points']);
+      updatePoints(res['shopPoints'] ?? res['points']);
       notifyListeners();
     }
     return res;

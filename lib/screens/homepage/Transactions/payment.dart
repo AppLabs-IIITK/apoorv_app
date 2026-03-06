@@ -29,6 +29,12 @@ class _PaymentState extends State<Payment> {
   void initState() {
     super.initState();
 
+    // Load shopkeeper mode preference (if any).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<UserProvider>().ensureShopkeeperModeLoaded();
+    });
+
     // Get arguments if passed
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
@@ -118,6 +124,9 @@ class _PaymentState extends State<Payment> {
             } else if (snapshot.hasData) {
               // print(snapshot.data);
               if (snapshot.data['success']) {
+                final userProvider = context.read<UserProvider>();
+                final useShopkeeperPoints =
+                    userProvider.isShopkeeper && userProvider.shopkeeperModeEnabled;
                 return Scaffold(
                   appBar: AppBar(
                       // title: const IconButton(onPressed: null, icon: Icon(Icons.arrow_back)),
@@ -157,6 +166,16 @@ class _PaymentState extends State<Payment> {
                               context.read<ReceiverProvider>().userEmail,
                               style: const TextStyle(fontSize: 20),
                             ),
+                            if (useShopkeeperPoints) ...[
+                              const SizedBox(height: 6),
+                              const Text(
+                                "Using shopkeeper points",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ],
                             SizedBox(
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -216,6 +235,7 @@ class _PaymentState extends State<Payment> {
                                       ).doATransaction(
                                         context.read<ReceiverProvider>().uid,
                                         int.parse(amountController.text),
+                                        mode: useShopkeeperPoints ? 'shop' : 'user',
                                       );
                                       setState(() {
                                         isProcessing = false;

@@ -8,6 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UserProvider extends ChangeNotifier {
   String userName = "Your Name";
@@ -26,6 +27,10 @@ class UserProvider extends ChangeNotifier {
   String idToken = "somerandomidtoken";
 
   int points = 0;
+  int shopPoints = 0;
+  bool isShopkeeper = false;
+  bool shopkeeperModeEnabled = false;
+  bool _shopkeeperModeLoaded = false;
 
   // UserProvider({
   //   this.userName = "Full Name",
@@ -91,6 +96,31 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateShopPoints(int newPoints) {
+    shopPoints = newPoints;
+    notifyListeners();
+  }
+
+  void updateIsShopkeeper(bool value) {
+    isShopkeeper = value;
+    notifyListeners();
+  }
+
+  Future<void> ensureShopkeeperModeLoaded() async {
+    if (_shopkeeperModeLoaded) return;
+    final prefs = await SharedPreferences.getInstance();
+    shopkeeperModeEnabled = prefs.getBool('shopkeeper_mode_enabled') ?? false;
+    _shopkeeperModeLoaded = true;
+    notifyListeners();
+  }
+
+  Future<void> setShopkeeperModeEnabled(bool value) async {
+    shopkeeperModeEnabled = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('shopkeeper_mode_enabled', value);
+    notifyListeners();
+  }
+
   void refreshGoogleServiceData() async {
     refreshUID();
     refreshIdToken();
@@ -128,12 +158,18 @@ class UserProvider extends ChangeNotifier {
       updateEmail(res['email']);
       updateProfilePhoto(res['photoUrl']);
       updatePoints(res['points']);
+      updateShopPoints(res['shopPoints'] ?? 0);
+      updateIsShopkeeper(res['isShopkeeper'] ?? false);
       notifyListeners();
     }
     return res;
   }
 
-  Future<Map<String, dynamic>> doATransaction(String to, int amount) async {
+  Future<Map<String, dynamic>> doATransaction(
+    String to,
+    int amount, {
+    String? mode,
+  }) async {
     refreshUID(listen: false);
     // refreshIdToken(listen: false);
     await Future.delayed(
@@ -144,6 +180,7 @@ class UserProvider extends ChangeNotifier {
       uid,
       to,
       amount,
+      mode: mode,
       // idToken,
     );
     print("Response from provider-> $response");

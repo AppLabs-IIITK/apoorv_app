@@ -26,6 +26,10 @@ class _Profile2ScreenState extends State<Profile2Screen> {
   void initState() {
     super.initState();
     _updateProfileData(); // Call the function to initially fetch and update profile data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<UserProvider>().ensureShopkeeperModeLoaded();
+    });
     // timer = Timer.periodic(const Duration(seconds: 10), (timer) {
     //   _updateProfileData(); // Call the function to fetch and update profile data every 10 seconds
     // });
@@ -91,6 +95,13 @@ class _Profile2ScreenState extends State<Profile2Screen> {
                 if (snapshot.data['success']) {
                   Provider.of<UserProvider>(ctx);
                   var providerContext = ctx.read<UserProvider>();
+                  final useShopkeeperPoints = providerContext.isShopkeeper &&
+                      providerContext.shopkeeperModeEnabled;
+                  final displayPoints = useShopkeeperPoints
+                      ? providerContext.shopPoints
+                      : providerContext.points;
+                  final displayLabel =
+                      useShopkeeperPoints ? "Shop Coins" : "Apoorv Coins";
 
                   return Scaffold(
                     floatingActionButton: FloatingActionButton(
@@ -243,7 +254,7 @@ class _Profile2ScreenState extends State<Profile2Screen> {
                                                   child: SizedBox(
                                                     width: double.infinity,
                                                     child: Text(
-                                                      "Apoorv Coins: ${providerContext.points}",
+                                                      "$displayLabel: $displayPoints",
                                                       textAlign:
                                                           TextAlign.center,
                                                       style: const TextStyle(
@@ -253,6 +264,48 @@ class _Profile2ScreenState extends State<Profile2Screen> {
                                                   ),
                                                 ),
                                                 Constants.gap,
+                                                if (providerContext.isShopkeeper) ...[
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(
+                                                        horizontal: 8, vertical: 6),
+                                                    decoration: BoxDecoration(
+                                                      color: Constants.blackColor,
+                                                      borderRadius:
+                                                          BorderRadius.circular(12),
+                                                      border: Border.all(
+                                                        color: Constants.yellowColor,
+                                                        width: 1,
+                                                      ),
+                                                    ),
+                                                    child: Row(
+                                                      children: [
+                                                        const Expanded(
+                                                          child: Text(
+                                                            "Shopkeeper mode",
+                                                            style: TextStyle(
+                                                              color: Colors.white,
+                                                              fontSize: 12,
+                                                              fontWeight:
+                                                                  FontWeight.w600,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        Switch(
+                                                          value: providerContext
+                                                              .shopkeeperModeEnabled,
+                                                          activeColor:
+                                                              Constants.yellowColor,
+                                                          onChanged: (val) {
+                                                            providerContext
+                                                                .setShopkeeperModeEnabled(
+                                                                    val);
+                                                          },
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  Constants.gap,
+                                                ],
                                                 const LogoutButton(),
                                               ],
                                             ),

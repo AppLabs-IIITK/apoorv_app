@@ -46,6 +46,10 @@ class _PointsScreenState extends State<PointsScreen> {
   void initState() {
     super.initState();
     getTransactionHistory();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<UserProvider>().ensureShopkeeperModeLoaded();
+    });
     if (widget.stream != null) {
       widget.stream!.listen((event) {
         if (event) {
@@ -140,6 +144,13 @@ class _PointsScreenState extends State<PointsScreen> {
                 if (snapshot.data['success']) {
                   Provider.of<UserProvider>(context);
                   var providerContext = context.read<UserProvider>();
+                  final useShopkeeperPoints = providerContext.isShopkeeper &&
+                      providerContext.shopkeeperModeEnabled;
+                  final displayPoints = useShopkeeperPoints
+                      ? providerContext.shopPoints
+                      : providerContext.points;
+                  final displayLabel =
+                      useShopkeeperPoints ? "Shop Coins" : "Points";
 
                   return GestureDetector(
                     onTap: () {
@@ -341,19 +352,16 @@ class _PointsScreenState extends State<PointsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   Text(
-                                    context
-                                        .read<UserProvider>()
-                                        .points
-                                        .toString(),
+                                    displayPoints.toString(),
                                     style: const TextStyle(
                                       fontSize: 72,
                                       fontWeight: FontWeight.bold,
                                       color: Constants.blackColor,
                                     ),
                                   ),
-                                  const Text(
-                                    "Points",
-                                    style: TextStyle(
+                                  Text(
+                                    displayLabel,
+                                    style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 36,
                                       color: Constants.blackColor,
