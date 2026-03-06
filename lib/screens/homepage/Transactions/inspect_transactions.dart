@@ -439,6 +439,7 @@ class _InspectTransactionsScreenState extends State<InspectTransactionsScreen> {
         onSelected: (_) => setState(() => _filter = filter),
         selectedColor: Constants.yellowColor,
         backgroundColor: const Color.fromRGBO(30, 30, 30, 1),
+        checkmarkColor: Colors.black, // Make checkmark visible on yellow background
         labelStyle: TextStyle(
           color: selected ? Colors.black : Colors.white,
           fontWeight: FontWeight.w600,

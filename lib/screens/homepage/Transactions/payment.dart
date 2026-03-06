@@ -154,171 +154,177 @@ class _PaymentState extends State<Payment> {
                         ),
                       ],
                       ),
-                  body: Padding(
-                    padding: EdgeInsets.only(
-                      left: MediaQuery.of(context).size.width * 0.05,
-                      right: MediaQuery.of(context).size.width * 0.05,
-                      bottom: MediaQuery.of(context).size.height * 0.05,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const SizedBox(),
-                        Column(
+                  body: SafeArea(
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          top: MediaQuery.of(context).size.height * 0.05,
+                          left: MediaQuery.of(context).size.width * 0.05,
+                          right: MediaQuery.of(context).size.width * 0.05,
+                          bottom: MediaQuery.of(context).size.height * 0.05,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            CircleAvatar(
-                              radius: MediaQuery.of(context).size.width * 0.2,
-                              backgroundColor: Constants.yellowColor,
-                              child: ProfileAvatar(
-                                imageUrl: context
-                                    .read<ReceiverProvider>()
-                                    .profilePhotoUrl,
-                                name: context.read<ReceiverProvider>().userName,
-                                radius: MediaQuery.of(context).size.width * 0.2,
-                                backgroundColor: Constants.yellowColor,
-                                textColor: Constants.blackColor,
-                              ),
-                            ),
-                            Constants.gap,
-                            Constants.gap,
-                            Text(
-                              "Paying ${context.read<ReceiverProvider>().userName}",
-                              style: const TextStyle(fontSize: 24),
-                            ),
-                            Text(
-                              context.read<ReceiverProvider>().userEmail,
-                              style: const TextStyle(fontSize: 20),
-                            ),
-                            if (useShopkeeperPoints) ...[
-                              const SizedBox(height: 6),
-                              const Text(
-                                "Using shopkeeper points",
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.white70,
-                                ),
-                              ),
-                            ],
-                            SizedBox(
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  SizedBox(
-                                    width: 160,
-                                    child: TextField(
-                                      controller: amountController,
-                                      keyboardType: TextInputType.number,
-                                      inputFormatters: [
-                                        LengthLimitingTextInputFormatter(4),
-                                        FilteringTextInputFormatter.digitsOnly,
-                                      ],
-                                      decoration: const InputDecoration(
-                                        border: UnderlineInputBorder(),
-                                        hintText: '0',
-                                      ),
-                                      style: const TextStyle(
-                                          fontSize: 72, color: Colors.white),
-                                    ),
+                            const SizedBox(),
+                            Column(
+                              children: [
+                                CircleAvatar(
+                                  radius: MediaQuery.of(context).size.width * 0.2,
+                                  backgroundColor: Constants.yellowColor,
+                                  child: ProfileAvatar(
+                                    imageUrl: context
+                                        .read<ReceiverProvider>()
+                                        .profilePhotoUrl,
+                                    name: context.read<ReceiverProvider>().userName,
+                                    radius: MediaQuery.of(context).size.width * 0.2,
+                                    backgroundColor: Constants.yellowColor,
+                                    textColor: Constants.blackColor,
                                   ),
+                                ),
+                                Constants.gap,
+                                Constants.gap,
+                                Text(
+                                  "Paying ${context.read<ReceiverProvider>().userName}",
+                                  style: const TextStyle(fontSize: 24),
+                                ),
+                                Text(
+                                  context.read<ReceiverProvider>().userEmail,
+                                  style: const TextStyle(fontSize: 20),
+                                ),
+                                if (useShopkeeperPoints) ...[
+                                  const SizedBox(height: 6),
                                   const Text(
-                                    "pts",
+                                    "Using shopkeeper points",
                                     style: TextStyle(
-                                      fontSize: 48,
-                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                      color: Colors.white70,
                                     ),
                                   ),
                                 ],
+                                SizedBox(
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      SizedBox(
+                                        width: 160,
+                                        child: TextField(
+                                          controller: amountController,
+                                          keyboardType: TextInputType.number,
+                                          inputFormatters: [
+                                            LengthLimitingTextInputFormatter(4),
+                                            FilteringTextInputFormatter.digitsOnly,
+                                          ],
+                                          decoration: const InputDecoration(
+                                            border: UnderlineInputBorder(),
+                                            hintText: '0',
+                                          ),
+                                          style: const TextStyle(
+                                              fontSize: 72, color: Colors.white),
+                                        ),
+                                      ),
+                                      const Text(
+                                        "pts",
+                                        style: TextStyle(
+                                          fontSize: 48,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                            // Stack(
+                            //   alignment: Alignment.center,
+                            //   children: [
+                            Padding(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal:
+                                      MediaQuery.of(context).size.width * 0.05),
+                              child: FilledButton(
+                                onPressed: isProcessing
+                                    ? null
+                                    : () async {
+                                        if (amountController.text.isNotEmpty &&
+                                            int.parse(amountController.text) > 0) {
+                                          if (!isProcessing) {
+                                            setState(() {
+                                              isProcessing = true;
+                                            });
+                                          }
+                                          var response =
+                                              await Provider.of<UserProvider>(
+                                            context,
+                                            listen: false,
+                                          ).doATransaction(
+                                            context.read<ReceiverProvider>().uid,
+                                            int.parse(amountController.text),
+                                            mode: useShopkeeperPoints ? 'shop' : 'user',
+                                          );
+                                          setState(() {
+                                            isProcessing = false;
+                                          });
+
+                                          if (context.mounted) {
+                                            if (response['success']) {
+                                              Provider.of<ReceiverProvider>(context,
+                                                      listen: false)
+                                                  .setAmount(
+                                                int.parse(amountController.text),
+                                              );
+
+                                              Navigator.of(context)
+                                                  .pushReplacementNamed(
+                                                      PaymentSuccess.routeName);
+                                            } else {
+                                              dialogBuilder(
+                                                context,
+                                                message: response['message'],
+                                                function: () =>
+                                                    Navigator.of(context).pop(),
+                                              );
+                                              showSnackbarOnScreen(
+                                                  context, response['message']);
+                                            }
+                                          }
+                                        } else {
+                                          showSnackbarOnScreen(
+                                              context, "Amount must be positive!");
+                                        }
+                                      },
+                                // style: ButtonStyle(
+                                //   backgroundColor: MaterialStateProperty.all<Color>(
+                                //       Constants.redColor),
+                                //   foregroundColor: MaterialStateProperty.all<Color>(
+                                //       Constants.whiteColor),
+
+                                // ),
+                                child: Container(
+                                  height: 48,
+                                  alignment: Alignment.center,
+                                  child: Container(
+                                    height: 48,
+                                    alignment: Alignment.center,
+                                    child: isProcessing
+                                        ? const SpinningApoorv()
+                                        : const Text(
+                                            'Continue',
+                                            style: TextStyle(fontSize: 20),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                  ),
+                                ),
                               ),
                             ),
+                            // if (isProcessing) const CircularProgressIndicator(),
+                            // ],
+                            // ),
                           ],
                         ),
-                        // Stack(
-                        //   alignment: Alignment.center,
-                        //   children: [
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                              horizontal:
-                                  MediaQuery.of(context).size.width * 0.05),
-                          child: FilledButton(
-                            onPressed: isProcessing
-                                ? null
-                                : () async {
-                                    if (amountController.text.isNotEmpty &&
-                                        int.parse(amountController.text) > 0) {
-                                      if (!isProcessing) {
-                                        setState(() {
-                                          isProcessing = true;
-                                        });
-                                      }
-                                      var response =
-                                          await Provider.of<UserProvider>(
-                                        context,
-                                        listen: false,
-                                      ).doATransaction(
-                                        context.read<ReceiverProvider>().uid,
-                                        int.parse(amountController.text),
-                                        mode: useShopkeeperPoints ? 'shop' : 'user',
-                                      );
-                                      setState(() {
-                                        isProcessing = false;
-                                      });
-
-                                      if (context.mounted) {
-                                        if (response['success']) {
-                                          Provider.of<ReceiverProvider>(context,
-                                                  listen: false)
-                                              .setAmount(
-                                            int.parse(amountController.text),
-                                          );
-
-                                          Navigator.of(context)
-                                              .pushReplacementNamed(
-                                                  PaymentSuccess.routeName);
-                                        } else {
-                                          dialogBuilder(
-                                            context,
-                                            message: response['message'],
-                                            function: () =>
-                                                Navigator.of(context).pop(),
-                                          );
-                                          showSnackbarOnScreen(
-                                              context, response['message']);
-                                        }
-                                      }
-                                    } else {
-                                      showSnackbarOnScreen(
-                                          context, "Amount must be positive!");
-                                    }
-                                  },
-                            // style: ButtonStyle(
-                            //   backgroundColor: MaterialStateProperty.all<Color>(
-                            //       Constants.redColor),
-                            //   foregroundColor: MaterialStateProperty.all<Color>(
-                            //       Constants.whiteColor),
-
-                            // ),
-                            child: Container(
-                              height: 48,
-                              alignment: Alignment.center,
-                              child: Container(
-                                height: 48,
-                                alignment: Alignment.center,
-                                child: isProcessing
-                                    ? const SpinningApoorv()
-                                    : const Text(
-                                        'Continue',
-                                        style: TextStyle(fontSize: 20),
-                                        textAlign: TextAlign.center,
-                                      ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        // if (isProcessing) const CircularProgressIndicator(),
-                        // ],
-                        // ),
-                      ],
+                      ),
                     ),
                   ),
                 );
