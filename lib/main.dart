@@ -8,7 +8,6 @@ import 'package:apoorv_app/shopkeeper/shopkeeper_profile_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'base_client.dart';
 import 'providers/receiver_provider.dart';
 import 'router.dart';
 import 'screens/homepage/Profile/profile_2.dart';
@@ -19,7 +18,6 @@ import 'screens/signup-flow/letsgo.dart';
 import 'providers/user_info_provider.dart';
 
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
@@ -30,6 +28,8 @@ import 'screens/signup-flow/welcome.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 import 'screens/homepage/points/leaderboard.dart';
 
 const supabaseUrl = 'https://ttmoltlyckvmfvntgetz.supabase.co';
@@ -37,21 +37,20 @@ const supabaseKey =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0bW9sdGx5Y2t2bWZ2bnRnZXR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc5NzE4OTcsImV4cCI6MjA1MzU0Nzg5N30.26ji5DOeeJkZkZvUdLuI3FoNAVGDLsuEe1boWSiucWY";
 
 Future<void> main() async {
-  await dotenv.load(fileName: '.env');
-
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Configure Firestore settings
-  FirebaseFirestore.instance.settings = const Settings(
-    persistenceEnabled: true,
-    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
-  );
+  // Configure Firestore settings (skip persistence on web — handled by JS SDK)
+  if (!kIsWeb) {
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled: true,
+      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+    );
+  }
 
-  BaseClient(dotenv.get('BASE_URL'));
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   // FirebaseAuth.instance.authStateChanges().listen((User? user) {
   //   if (user == null) {

@@ -65,4 +65,5 @@ class DefaultFirebaseOptions {
     projectId: 'apoorv-iiitk',
     storageBucket: 'apoorv-iiitk.firebasestorage.app',
   );
+
 }

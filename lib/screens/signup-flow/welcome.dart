@@ -138,8 +138,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                     });
                                   }
                                 } catch (e) {
+                                  debugPrint('🔴 Welcome screen error: $e');
                                   if (context.mounted) {
-                                    showSnackbarOnScreen(context, "Authentication failed");
+                                    showSnackbarOnScreen(context, "Error: $e");
                                   }
                                   setState(() {
                                     isProcessing = false;
