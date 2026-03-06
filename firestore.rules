@@ -72,6 +72,15 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ── Feed ───────────────────────────────────────────────────────────────
+
+    // Feed is stored as a single document at feed/latest.
+    // Any signed-in user can read it; only admins can modify it.
+    match /feed/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
     // ── Fallback ───────────────────────────────────────────────────────────
 
     // Everything else: public read, no client writes.

@@ -354,6 +354,34 @@ class APICalls {
     }
   }
 
+  /// Updates the entire feed body stored in Firestore at `feed/latest`.
+  ///
+  /// Feed is stored as a single document with a `body` array so the home tab
+  /// can fetch it in one read.
+  ///
+  /// NOTE: This is intended to be admin-only; enforce via Firestore rules.
+  Future<Map<String, dynamic>> updateFeed(
+    List<Map<String, dynamic>> body,
+    String idToken,
+  ) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('feed')
+          .doc('latest')
+          .set({'body': body}, SetOptions(merge: true));
+
+      return {
+        'success': true,
+        'message': 'Feed updated',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+
   Future<Map<String, dynamic>> getUsersSearchList(
       String query, String idToken) async {
     try {

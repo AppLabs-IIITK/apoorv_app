@@ -8,11 +8,17 @@ class SingleFeed extends StatelessWidget {
     this.priority = false,
     this.imageUrl,
     required this.index,
+    this.editMode = false,
+    this.onEdit,
+    this.onDelete,
   });
   final int index;
   final String title;
   final bool priority;
   final String? imageUrl;
+  final bool editMode;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   static const feedColor = [
     Constants.creamColor,
@@ -41,34 +47,66 @@ class SingleFeed extends StatelessWidget {
         bottom: MediaQuery.of(context).size.width * 0.03,
       ),
       color: feedColor[index % 2],
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Row(
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
               children: [
-                Image.asset("assets/images/Apoorv.png"),
-                const SizedBox(width: 16),
-                Expanded(
-                    child: Text(
-                  title,
-                  style: const TextStyle(
-                    color: textColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                Row(
+                  children: [
+                    Image.asset("assets/images/Apoorv.png"),
+                    const SizedBox(width: 16),
+                    Expanded(
+                        child: Text(
+                      title,
+                      style: const TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    )),
+                  ],
+                ),
+                if (imageUrl != null) ...{
+                  Constants.gap,
+                  Image.network(
+                    imageUrl!,
+                    fit: BoxFit.cover,
                   ),
-                )),
+                }
               ],
             ),
-            if (imageUrl != null) ...{
-              Constants.gap,
-              Image.network(
-                imageUrl!,
-                fit: BoxFit.cover,
+          ),
+          if (editMode)
+            Positioned(
+              top: 4,
+              right: 4,
+              child: Row(
+                children: [
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.edit, color: Constants.creamColor),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Constants.blackColor,
+                    ),
+                    onPressed: onEdit,
+                    tooltip: 'Edit',
+                  ),
+                  const SizedBox(width: 6),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.delete, color: Constants.redColor),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Constants.blackColor,
+                    ),
+                    onPressed: onDelete,
+                    tooltip: 'Delete',
+                  ),
+                ],
               ),
-            }
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
