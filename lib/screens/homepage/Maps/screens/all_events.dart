@@ -1,3 +1,4 @@
+import 'package:apoorv_app/screens/homepage/Maps/components/event_image.dart';
 import 'package:apoorv_app/utils/models/feed.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
@@ -262,18 +263,9 @@ class _AllEventsScreenState extends State<AllEventsScreen>
                     color: Colors.black,
                     width: double.infinity,
                     height: 150,
-                    child: Image.network(
-                      event.imageUrl!,
+                    child: EventImage(
+                      imageUrl: event.imageUrl!,
                       fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return const Center(
-                          child: CircularProgressIndicator(color: Constants.redColor),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) => const Icon(
-                        Icons.broken_image, color: Constants.creamColor,
-                      ),
                     ),
                   ),
                 ),

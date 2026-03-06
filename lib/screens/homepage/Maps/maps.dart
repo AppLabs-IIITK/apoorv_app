@@ -1,3 +1,4 @@
+import 'package:apoorv_app/screens/homepage/Maps/components/event_image.dart';
 import 'package:apoorv_app/utils/models/feed.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -114,19 +115,6 @@ class _MapsScreenState extends State<MapsScreen> {
         _fallbackFetchEvents();
       },
     );
-
-    // Safety net: if neither stream has produced data within 5 seconds,
-    // do a manual one-off fetch. This catches silent failures on web.
-    Future.delayed(const Duration(seconds: 5), () {
-      if (!_locationsLoaded && mounted) {
-        debugPrint('⚠️ Locations stream did not emit in 5s — doing fallback fetch');
-        _fallbackFetchLocations();
-      }
-      if (!_eventsLoaded && mounted) {
-        debugPrint('⚠️ Events stream did not emit in 5s — doing fallback fetch');
-        _fallbackFetchEvents();
-      }
-    });
   }
 
   /// One-off Firestore fetch for locations (fallback when stream fails).
@@ -437,18 +425,9 @@ class _MapsScreenState extends State<MapsScreen> {
                     color: Colors.black,
                     width: double.infinity,
                     height: 150,
-                    child: Image.network(
-                      event.imageUrl!,
+                    child: EventImage(
+                      imageUrl: event.imageUrl!,
                       fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return const Center(
-                          child: CircularProgressIndicator(color: Constants.redColor),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) => const Icon(
-                        Icons.broken_image, color: Constants.creamColor,
-                      ),
                     ),
                   ),
                 ),

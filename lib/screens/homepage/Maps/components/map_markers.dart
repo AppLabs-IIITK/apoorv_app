@@ -1,4 +1,6 @@
+import 'package:apoorv_app/providers/app_config_provider.dart';
 import 'package:apoorv_app/utils/models/feed.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import '../../../../../../constants.dart';
@@ -20,6 +22,8 @@ class MapMarkerLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final config = Provider.of<AppConfigProvider>(context, listen: false);
+
     return MarkerLayer(
       markers: markers.map((marker) {
         return Marker(
@@ -28,7 +32,7 @@ class MapMarkerLayer extends StatelessWidget {
           point: marker.position,
           child: GestureDetector(
             onTap: () => onMarkerTapped(marker),
-            onLongPress: () => _showMarkerOptions(context, marker),
+            onLongPress: config.isAdmin ? () => _showMarkerOptions(context, marker) : null,
             child: _buildMarkerWidget(marker),
           ),
         );

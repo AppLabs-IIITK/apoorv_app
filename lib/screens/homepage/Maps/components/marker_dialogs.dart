@@ -1,3 +1,4 @@
+import 'package:apoorv_app/screens/homepage/Maps/components/event_image.dart';
 import 'package:apoorv_app/screens/homepage/Maps/services/map_data_service.dart';
 import 'package:apoorv_app/utils/models/feed.dart';
 import 'package:flutter/material.dart';
@@ -712,18 +713,9 @@ class MarkerDialogs {
       margin: const EdgeInsets.only(bottom: 16),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
-        child: Image.network(
-          imageUrl,
+        child: EventImage(
+          imageUrl: imageUrl,
           fit: BoxFit.cover,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return const Center(
-              child: CircularProgressIndicator(color: Constants.redColor),
-            );
-          },
-          errorBuilder: (context, error, stackTrace) => const Icon(
-            Icons.broken_image, color: Constants.creamColor,
-          ),
         ),
       ),
     );

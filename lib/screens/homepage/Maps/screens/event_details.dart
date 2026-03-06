@@ -1,3 +1,4 @@
+import 'package:apoorv_app/screens/homepage/Maps/components/event_image.dart';
 import 'package:apoorv_app/utils/models/feed.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -106,18 +107,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   width: double.infinity,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      event.imageUrl!,
+                    child: EventImage(
+                      imageUrl: event.imageUrl!,
                       fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return const Center(
-                          child: CircularProgressIndicator(color: Constants.redColor),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) => const Center(
-                        child: Icon(Icons.broken_image, color: Constants.creamColor, size: 48),
-                      ),
                     ),
                   ),
                 ),
