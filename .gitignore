@@ -36,6 +36,7 @@ migrate_working_dir/
 /linux
 /macos
 *.env
+.firebase/
 
 # Symbolication related
 app.*.symbols
