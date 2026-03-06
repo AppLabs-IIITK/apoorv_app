@@ -129,6 +129,8 @@ class ShopkeeperProvider extends ChangeNotifier {
               date: formattedTime,
               type: 'debit',
               points: txn['transactionValue'],
+              isShop:
+                  (txn['type'] ?? 'user').toString().toLowerCase() == 'shop',
             ));
           } else if (txn['to'] == uid || (txn['toEmail'] != null && txn['toEmail'].toString().trim().toLowerCase() == shopkeeperEmail.trim().toLowerCase())) {
             transactions.add(TransactionsWidget(
@@ -136,6 +138,8 @@ class ShopkeeperProvider extends ChangeNotifier {
               date: formattedTime,
               type: 'credit',
               points: txn['transactionValue'],
+              isShop:
+                  (txn['type'] ?? 'user').toString().toLowerCase() == 'shop',
             ));
           }
         }

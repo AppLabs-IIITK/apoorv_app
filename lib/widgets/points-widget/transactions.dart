@@ -12,6 +12,7 @@ class TransactionsWidget extends StatelessWidget {
   final String? fromEmail;
   final String? toEmail;
   final VoidCallback? onTap;
+  final bool isShop;
 
   const TransactionsWidget({
     super.key,
@@ -24,6 +25,7 @@ class TransactionsWidget extends StatelessWidget {
     this.fromEmail,
     this.toEmail,
     this.onTap,
+    this.isShop = false,
   });
 
   @override
@@ -59,12 +61,27 @@ class TransactionsWidget extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(name!,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Color.fromRGBO(18, 18, 18, 1),
-                      )),
+                  Row(
+                    children: [
+                      Text(name!,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: Color.fromRGBO(18, 18, 18, 1),
+                          )),
+                      if (isShop) ...[
+                        const SizedBox(width: 6),
+                        const Text(
+                          'shop',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: Color.fromRGBO(18, 18, 18, 0.6),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                   Text(
                     date!,
                     style: const TextStyle(

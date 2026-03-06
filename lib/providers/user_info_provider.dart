@@ -246,6 +246,8 @@ class UserProvider extends ChangeNotifier {
               date: formattedTime,
               type: 'debit',
               points: txn['transactionValue'],
+              isShop:
+                  (txn['type'] ?? 'user').toString().toLowerCase() == 'shop',
               fromUid: txn['from']?.toString(),
               toUid: txn['to']?.toString(),
               fromEmail: txn['fromEmail']?.toString(),
@@ -257,6 +259,8 @@ class UserProvider extends ChangeNotifier {
               date: formattedTime,
               type: 'credit',
               points: txn['transactionValue'],
+              isShop:
+                  (txn['type'] ?? 'user').toString().toLowerCase() == 'shop',
               fromUid: txn['from']?.toString(),
               toUid: txn['to']?.toString(),
               fromEmail: txn['fromEmail']?.toString(),

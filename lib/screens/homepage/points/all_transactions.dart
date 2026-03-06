@@ -174,12 +174,15 @@ class _AllTransactionsState extends State<AllTransactions> {
     final points = (txn['transactionValue'] is int)
         ? txn['transactionValue'] as int
         : int.tryParse(txn['transactionValue']?.toString() ?? '') ?? 0;
+    final isShop =
+        (txn['type'] ?? 'user').toString().toLowerCase() == 'shop';
 
     return TransactionsWidget(
       name: name.toString().isEmpty ? 'Unknown' : name.toString(),
       date: formattedTime,
       type: isDebit ? 'debit' : 'credit',
       points: points,
+      isShop: isShop,
       fromUid: txn['from']?.toString(),
       toUid: txn['to']?.toString(),
       fromEmail: txn['fromEmail']?.toString(),
@@ -197,6 +200,8 @@ class _AllTransactionsState extends State<AllTransactions> {
     final points = (txn['transactionValue'] is int)
         ? txn['transactionValue'] as int
         : int.tryParse(txn['transactionValue']?.toString() ?? '') ?? 0;
+    final isShop =
+        (txn['type'] ?? 'user').toString().toLowerCase() == 'shop';
 
     return InkWell(
       onTap: () => _showTransactionDetails(txn),
@@ -215,13 +220,28 @@ class _AllTransactionsState extends State<AllTransactions> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '$fromName -> $toName',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Color.fromRGBO(18, 18, 18, 1),
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '$fromName -> $toName',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Color.fromRGBO(18, 18, 18, 1),
+                            ),
+                          ),
+                        ),
+                        if (isShop)
+                          const Text(
+                            'shop',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Color.fromRGBO(18, 18, 18, 0.6),
+                            ),
+                          ),
+                      ],
                     ),
                     Text(
                       formattedTime,
