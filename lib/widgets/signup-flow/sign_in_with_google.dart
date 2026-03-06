@@ -24,6 +24,9 @@ Future<UserCredential?> signInWithGoogle(BuildContext context) async {
       final UserCredential userCredential = await FirebaseAuth.instance.signInWithPopup(googleProvider);
       firebaseIdToken = await userCredential.user?.getIdToken();
 
+      // Prevent double-auth/routing flicker on web.
+      await FirebaseAuth.instance.signOut();
+
       if (firebaseIdToken == null) {
         if (!context.mounted) return null;
         showSnackbarOnScreen(context, "Failed to get Firebase ID token");

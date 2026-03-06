@@ -1,5 +1,6 @@
 import 'package:apoorv_app/screens/signup-flow/welcome.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -13,7 +14,9 @@ class LogoutButton extends StatelessWidget {
     return FilledButton(
       onPressed: () async {
         await FirebaseAuth.instance.signOut();
-        await GoogleSignIn().signOut();
+        if (!kIsWeb) {
+          await GoogleSignIn().signOut();
+        }
 
         if (context.mounted) {
           Navigator.of(context)

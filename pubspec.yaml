@@ -69,6 +69,17 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^3.0.1
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  android: false
+  web:
+    generate: true
+    image_path: assets/images/BestPhoenix.png
+    background_color: "#000000"
+    theme_color: "#000000"
+
+# Run flutter pub run flutter_launcher_icons to generate the icons
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -103,21 +114,21 @@ flutter:
   # example:
   fonts:
     - family: Inter
-      fonts: 
+      fonts:
         - asset: assets/fonts/Inter/Inter-Regular.ttf
         - asset: assets/fonts/Inter/Inter-Bold.ttf
           weight: 700
         - asset: assets/fonts/Inter/Inter-Light.ttf
           weight: 300
     - family: Libre Baskerville
-      fonts: 
+      fonts:
         - asset: assets/fonts/Libre_Baskerville/LibreBaskerville-Regular.ttf
         - asset: assets/fonts/Libre_Baskerville/LibreBaskerville-Italic.ttf
           style: italic
         - asset: assets/fonts/Libre_Baskerville/LibreBaskerville-Bold.ttf
           weight: 700
     - family: Raleway
-      fonts: 
+      fonts:
         - asset: assets/fonts/Raleway/Raleway-Regular.ttf
         - asset: assets/fonts/Raleway/Raleway-Light.ttf
           weight: 300
