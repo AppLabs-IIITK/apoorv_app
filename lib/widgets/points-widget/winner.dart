@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../constants.dart';
+import '../profile_avatar.dart';
 
 class Winner extends StatelessWidget {
   final String? image;
@@ -52,11 +53,21 @@ class Winner extends StatelessWidget {
           Container(
             decoration: decoration,
             child: CircleAvatar(
-                backgroundImage: NetworkImage(image ?? ''),
                 radius: 50,
-                child: const Stack(
+                backgroundColor: Constants.yellowColor,
+                child: Stack(
                   children: [
                     Align(
+                      alignment: Alignment.center,
+                      child: ProfileAvatar(
+                        imageUrl: image,
+                        name: name,
+                        radius: 50,
+                        backgroundColor: Constants.yellowColor,
+                        textColor: Constants.blackColor,
+                      ),
+                    ),
+                    const Align(
                       alignment: Alignment.bottomRight,
                       child: Icon(
                         Icons.emoji_events,

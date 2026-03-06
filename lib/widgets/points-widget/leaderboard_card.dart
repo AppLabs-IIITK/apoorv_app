@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:apoorv_app/constants.dart';
 import 'package:provider/provider.dart';
 
+import '../profile_avatar.dart';
+
 class LeaderboardCard extends StatelessWidget {
   final String? name;
   final int? points;
@@ -122,7 +124,14 @@ class LeaderboardCard extends StatelessWidget {
                     ),
                     CircleAvatar(
                       radius: 22,
-                      foregroundImage: NetworkImage(image ?? ''),
+                      backgroundColor: Constants.yellowColor,
+                      child: ProfileAvatar(
+                        imageUrl: image,
+                        name: name,
+                        radius: 22,
+                        backgroundColor: Constants.yellowColor,
+                        textColor: Constants.blackColor,
+                      ),
                     ),
                   ],
                 ),

@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../constants.dart';
+import '../../../widgets/profile_avatar.dart';
 
 class Payment extends StatefulWidget {
   static const routeName = '/payment';
@@ -134,12 +135,17 @@ class _PaymentState extends State<Payment> {
                         Column(
                           children: [
                             CircleAvatar(
-                              backgroundImage: NetworkImage(
-                                context
-                                    .read<ReceiverProvider>()
-                                    .profilePhotoUrl!,
-                              ),
                               radius: MediaQuery.of(context).size.width * 0.2,
+                              backgroundColor: Constants.yellowColor,
+                              child: ProfileAvatar(
+                                imageUrl: context
+                                    .read<ReceiverProvider>()
+                                    .profilePhotoUrl,
+                                name: context.read<ReceiverProvider>().userName,
+                                radius: MediaQuery.of(context).size.width * 0.2,
+                                backgroundColor: Constants.yellowColor,
+                                textColor: Constants.blackColor,
+                              ),
                             ),
                             Constants.gap,
                             Constants.gap,

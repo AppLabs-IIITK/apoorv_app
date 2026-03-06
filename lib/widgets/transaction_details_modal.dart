@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../constants.dart';
+import 'profile_avatar.dart';
 
 class TransactionDetailsModal extends StatefulWidget {
   final String fromUid;
@@ -123,24 +124,17 @@ class _TransactionDetailsModalState extends State<TransactionDetailsModal> {
               ),
             ),
             const SizedBox(height: 8),
-            profileImage.isNotEmpty
-                ? CircleAvatar(
-                    radius: 30,
-                    backgroundImage: NetworkImage(profileImage),
-                    backgroundColor: Constants.yellowColor,
-                  )
-                : CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Constants.yellowColor,
-                    child: Text(
-                      name.isNotEmpty ? name[0].toUpperCase() : '?',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Constants.blackColor,
-                      ),
-                    ),
-                  ),
+            CircleAvatar(
+              radius: 30,
+              backgroundColor: Constants.yellowColor,
+              child: ProfileAvatar(
+                imageUrl: profileImage,
+                name: name,
+                radius: 30,
+                backgroundColor: Constants.yellowColor,
+                textColor: Constants.blackColor,
+              ),
+            ),
             const SizedBox(height: 8),
             Text(
               name,

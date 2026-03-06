@@ -22,8 +22,9 @@ class ReceiverProvider extends ChangeNotifier {
     uid = "";
   }
 
-  void updateProfilePhoto(String pf) {
-    profilePhotoUrl = pf;
+  void updateProfilePhoto(String? pf) {
+    final v = (pf ?? '').trim();
+    profilePhotoUrl = v.isEmpty ? null : v;
     notifyListeners();
   }
 
@@ -53,7 +54,7 @@ class ReceiverProvider extends ChangeNotifier {
     uid = args['uid'];
     userName = args['fullName'];
     userEmail = args['email'];
-    updateProfilePhoto(args['profileImage']);
+    updateProfilePhoto(args['profileImage']?.toString());
   }
 
   Future<Map<String, dynamic>> setReceiverData(BuildContext context) async {
@@ -70,7 +71,7 @@ class ReceiverProvider extends ChangeNotifier {
         email: response['email'],
       );
 
-      updateProfilePhoto(response['photoUrl']);
+      updateProfilePhoto(response['photoUrl']?.toString());
 
       retValue['success'] = true;
       // notifyListeners();
