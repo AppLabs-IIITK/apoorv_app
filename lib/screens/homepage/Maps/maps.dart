@@ -721,7 +721,7 @@ class _MapsScreenState extends State<MapsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('APOORV 2025 Map'),
+        title: const Text('APOORV 2026 Map'),
         backgroundColor: Constants.blackColor,
         actions: [
           // Admin-only: Add new location pin
