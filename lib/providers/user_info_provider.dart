@@ -13,7 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class UserProvider extends ChangeNotifier {
   String userName = "Your Name";
   String userCollegeName = "IIIT Kottayam";
-  String? userRollNo = "2021BCS0000";
+  String? userRollNo;
   String userPhNo = "000000000";
   String? profilePhotoUrl =
       'https://t3.ftcdn.net/jpg/02/43/12/34/360_F_243123463_zTooub557xEWABDLk0jJklDyLSGl2jrr.jpg';

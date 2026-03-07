@@ -27,6 +27,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   bool isProcessing = false;
 
+  bool _isFromCollege = true;
+  int _initialPoints = 0;
+
   @override
   void dispose() {
     userNameController.dispose();
@@ -41,6 +44,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   void initState() {
     super.initState();
+
+    _loadFromCollegeFromEmail();
     // Defer provider notification until after the first frame —
     // calling notifyListeners() synchronously during initState triggers
     // "setState() called during build" because the widget isn't mounted yet.
@@ -51,11 +56,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
       }
     });
 
-    _prefillRollNumber();
+    _loadUserPrefill();
     popScreen(context);
   }
 
-  Future<void> _prefillRollNumber() async {
+  void _loadFromCollegeFromEmail() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final email = user.email ?? '';
+    setState(() {
+      _isFromCollege = email.trim().toLowerCase().endsWith('iiitkottayam.ac.in');
+    });
+  }
+
+  Future<void> _loadUserPrefill() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
@@ -65,15 +79,38 @@ class _SignUpScreenState extends State<SignUpScreen> {
           .doc(user.uid)
           .get();
       final data = doc.data();
-      final roll = (data == null) ? null : (data["rollNumber"] as String?);
-      if (roll != null && roll.trim().isNotEmpty && mounted) {
-        setState(() {
-          userRollNoController.text = roll;
-        });
+
+      final value = data == null ? null : data['fromCollege'];
+      final fromCollege = value is bool
+          ? value
+          : (user.email ?? '').trim().toLowerCase().endsWith('iiitkottayam.ac.in');
+
+      final name = (data == null) ? null : (data['name'] as String?);
+      final phone = (data == null) ? null : (data['phone'] as String?);
+      final roll = (data == null) ? null : (data['rollNumber'] as String?);
+      final points = (data == null) ? null : data['points'];
+
+      final nameTrim = (name ?? '').trim();
+      if (nameTrim.isNotEmpty) {
+        userNameController.text = nameTrim;
       }
+      final phoneTrim = (phone ?? '').trim();
+      if (phoneTrim.isNotEmpty) {
+        userPhoneController.text = phoneTrim;
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _isFromCollege = fromCollege;
+        _initialPoints = (points is int) ? points : 0;
+        if (!_isFromCollege) {
+          userRollNoController.text = '';
+        } else if (roll != null && roll.trim().isNotEmpty) {
+          userRollNoController.text = roll.trim();
+        }
+      });
     } catch (e) {
-      // Non-fatal; user can still continue with just name.
-      print("Failed to prefill roll number: $e");
+      // Non-fatal; default remains true.
     }
   }
 
@@ -172,19 +209,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                       const TextStyle(color: Colors.black),
                                 )),
                             Constants.gap,
-                            TextFormField(
-                                controller: userRollNoController,
-                                enabled: false,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16)),
-                                  filled: true,
-                                  fillColor: Constants.silverColor,
-                                  hintText: "Roll Number",
-                                  hintStyle:
-                                      const TextStyle(color: Colors.black54),
-                                )),
-                            Constants.gap,
+                            if (_isFromCollege) ...[
+                              TextFormField(
+                                  controller: userRollNoController,
+                                  enabled: false,
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16)),
+                                    filled: true,
+                                    fillColor: Constants.silverColor,
+                                    hintText: "Roll Number",
+                                    hintStyle:
+                                        const TextStyle(color: Colors.black54),
+                                  )),
+                              Constants.gap,
+                            ],
                             TextFormField(
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -249,7 +288,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                                           if (context.mounted) {
                                             showSnackbarOnScreen(
-                                                context, "Onboarding complete");
+                                              context,
+                                              (_isFromCollege && _initialPoints > 0)
+                                                  ? "Onboarding complete. $_initialPoints coins awarded for college user"
+                                                  : "Onboarding complete",
+                                            );
                                             Navigator.of(context)
                                                 .restorablePushReplacementNamed(
                                                     HomePage.routeName);

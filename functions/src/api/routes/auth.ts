@@ -115,16 +115,17 @@ router.post("/google", async (req, res) => {
 
     const email = googleData.email;
 
-    if (!email.endsWith("iiitkottayam.ac.in")) {
-      res.status(403).json({
-        error: "Forbidden",
-        message: "Only IIIT Kottayam email addresses are allowed",
-        email,
-      });
-      return;
-    }
+    // if (!email.endsWith("iiitkottayam.ac.in")) {
+    //   res.status(403).json({
+    //     error: "Forbidden",
+    //     message: "Only IIIT Kottayam email addresses are allowed",
+    //     email,
+    //   });
+    //   return;
+    // }
 
-    const rollNumber = extractRollNumber(email);
+    const fromCollege = email.endsWith("iiitkottayam.ac.in");
+    const rollNumber = fromCollege ? extractRollNumber(email) : null;
     const emailLocalPart = email.split("@")[0];
     const photoUrl = googleData.photoUrl;
 
@@ -166,9 +167,9 @@ router.post("/google", async (req, res) => {
         // Mirror legacy API keys so Flutter can switch to Firestore with minimal changes
         photoUrl: photoUrl,
         phone: "",
-        fromCollege: true,
-        collegeName: "IIIT Kottayam",
-        points: 50,
+        fromCollege,
+        collegeName: fromCollege ? "IIIT Kottayam" : "Outside College",
+        points: fromCollege ? 50 : 0,
         name: null,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         lastLogin: admin.firestore.FieldValue.serverTimestamp(),
@@ -178,6 +179,8 @@ router.post("/google", async (req, res) => {
         email,
         emailLocalPart,
         rollNumber,
+        fromCollege,
+        collegeName: fromCollege ? "IIIT Kottayam" : "Outside College",
         ...(photoUrl ? {photoUrl} : {}),
         lastLogin: admin.firestore.FieldValue.serverTimestamp(),
       });

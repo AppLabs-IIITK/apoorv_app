@@ -29,8 +29,8 @@ class _RoutingState extends State<Routing> {
     }
 
     // Minimal onboarding gate:
-    // - if Firestore user doc has non-empty name -> go Home
-    // - else -> go onboarding (name)
+    // - if Firestore user doc has non-empty name + phone -> go Home
+    // - else -> go onboarding (name + phone)
     try {
       final uid = FirebaseAuth.instance.currentUser!.uid;
       final doc = await FirebaseFirestore.instance
@@ -40,7 +40,10 @@ class _RoutingState extends State<Routing> {
 
       final data = doc.data();
       final name = (data == null) ? null : (data["name"] as String?);
+      final phone = (data == null) ? null : (data["phone"] as String?);
       final hasName = name != null && name.trim().isNotEmpty;
+      final hasPhone = phone != null && phone.trim().isNotEmpty;
+      final profileComplete = hasName && hasPhone;
 
       // Keep provider minimally updated for UI.
       if (!context.mounted) return -1;
@@ -62,7 +65,7 @@ class _RoutingState extends State<Routing> {
         Provider.of<AppConfigProvider>(context, listen: false).fetchConfig();
       }
 
-      return hasName ? 2 : 1;
+      return profileComplete ? 2 : 1;
     } catch (e) {
       print("Error while routing: $e");
       return -1;
