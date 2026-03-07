@@ -7,6 +7,7 @@ import '../../../../../../constants.dart';
 import '../../../../../providers/app_config_provider.dart';
 import '../components/marker_dialogs.dart';
 import '../services/map_data_service.dart';
+import 'package:apoorv_app/utils/share_event/share_event.dart';
 
 class EventDetailsScreen extends StatefulWidget {
   final Event event;
@@ -175,13 +176,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Share functionality coming soon!'),
-                          ),
-                        );
-                      },
+                      onPressed: () => shareEvent(
+                        context: context,
+                        event: event,
+                        locationName: widget.locationName,
+                      ),
                       icon: const Icon(Icons.share),
                       label: const Text('Share Event'),
                       style: ElevatedButton.styleFrom(

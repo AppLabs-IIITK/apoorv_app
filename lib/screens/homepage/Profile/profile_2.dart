@@ -9,6 +9,7 @@ import '../../../constants.dart';
 import '../../../widgets/dialog.dart';
 import '../../../widgets/signup-flow/logout.dart';
 import '../../../widgets/spinning_apoorv.dart';
+import '../Transactions/inspect_transactions.dart';
 
 class Profile2Screen extends StatefulWidget {
   static const routeName = '/profile-2';
@@ -137,99 +138,113 @@ class _Profile2ScreenState extends State<Profile2Screen> {
                                         mainAxisAlignment:
                                             MainAxisAlignment.spaceBetween,
                                         children: [
-                                          ClipRRect(
-                                            borderRadius: BorderRadius.circular(
-                                                MediaQuery.of(context)
-                                                        .size
-                                                        .width *
-                                                    0.33 /
-                                                    2),
-                                            child: (providerContext
-                                                            .profilePhotoUrl !=
-                                                        null &&
-                                                    providerContext
-                                                        .profilePhotoUrl!
-                                                        .isNotEmpty)
-                                                ? Image.network(
-                                                    providerContext
-                                                        .profilePhotoUrl!,
-                                                    height: MediaQuery.of(
-                                                                context)
-                                                            .size
-                                                            .width *
-                                                        0.33,
-                                                    width: MediaQuery.of(context)
-                                                            .size
-                                                            .width *
-                                                        0.33,
-                                                    fit: BoxFit.cover,
-                                                    errorBuilder: (context,
-                                                        error, stackTrace) {
-                                                      return Container(
-                                                        height: MediaQuery.of(
-                                                                    context)
-                                                                .size
-                                                                .width *
-                                                            0.33,
-                                                        width: MediaQuery.of(
-                                                                    context)
-                                                                .size
-                                                                .width *
-                                                            0.33,
-                                                        color: Constants
-                                                            .yellowColor,
-                                                        alignment:
-                                                            Alignment.center,
-                                                        child: Text(
-                                                          providerContext
-                                                                  .userName
-                                                                  .isNotEmpty
-                                                              ? providerContext
-                                                                  .userName[0]
-                                                                  .toUpperCase()
-                                                              : '?',
-                                                          style:
-                                                              const TextStyle(
-                                                            fontSize: 48,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            color: Constants
-                                                                .blackColor,
-                                                          ),
-                                                        ),
-                                                      );
-                                                    },
-                                                  )
-                                                : Container(
-                                                    height: MediaQuery.of(
-                                                                context)
-                                                            .size
-                                                            .width *
-                                                        0.33,
-                                                    width: MediaQuery.of(context)
-                                                            .size
-                                                            .width *
-                                                        0.33,
-                                                    color:
-                                                        Constants.yellowColor,
-                                                    alignment: Alignment.center,
-                                                    child: Text(
+                                          InkWell(
+                                            onTap: () {
+                                              Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (_) =>
+                                                      InspectTransactionsScreen(
+                                                    uid: providerContext.uid,
+                                                    name: providerContext.userName,
+                                                    email: providerContext.userEmail,
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            child: ClipRRect(
+                                              borderRadius: BorderRadius.circular(
+                                                  MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.33 /
+                                                      2),
+                                              child: (providerContext
+                                                              .profilePhotoUrl !=
+                                                          null &&
                                                       providerContext
-                                                              .userName
-                                                              .isNotEmpty
-                                                          ? providerContext
-                                                              .userName[0]
-                                                              .toUpperCase()
-                                                          : '?',
-                                                      style: const TextStyle(
-                                                        fontSize: 48,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        color:
-                                                            Constants.blackColor,
+                                                          .profilePhotoUrl!
+                                                          .isNotEmpty)
+                                                  ? Image.network(
+                                                      providerContext
+                                                          .profilePhotoUrl!,
+                                                      height: MediaQuery.of(
+                                                                  context)
+                                                              .size
+                                                              .width *
+                                                          0.33,
+                                                      width: MediaQuery.of(context)
+                                                              .size
+                                                              .width *
+                                                          0.33,
+                                                      fit: BoxFit.cover,
+                                                      errorBuilder: (context,
+                                                          error, stackTrace) {
+                                                        return Container(
+                                                          height: MediaQuery.of(
+                                                                      context)
+                                                                  .size
+                                                                  .width *
+                                                              0.33,
+                                                          width: MediaQuery.of(
+                                                                      context)
+                                                                  .size
+                                                                  .width *
+                                                              0.33,
+                                                          color: Constants
+                                                              .yellowColor,
+                                                          alignment:
+                                                              Alignment.center,
+                                                          child: Text(
+                                                            providerContext
+                                                                    .userName
+                                                                    .isNotEmpty
+                                                                ? providerContext
+                                                                    .userName[0]
+                                                                    .toUpperCase()
+                                                                : '?',
+                                                            style:
+                                                                const TextStyle(
+                                                              fontSize: 48,
+                                                              fontWeight:
+                                                                  FontWeight.bold,
+                                                              color: Constants
+                                                                  .blackColor,
+                                                            ),
+                                                          ),
+                                                        );
+                                                      },
+                                                    )
+                                                  : Container(
+                                                      height: MediaQuery.of(
+                                                                  context)
+                                                              .size
+                                                              .width *
+                                                          0.33,
+                                                      width: MediaQuery.of(context)
+                                                              .size
+                                                              .width *
+                                                          0.33,
+                                                      color:
+                                                          Constants.yellowColor,
+                                                      alignment: Alignment.center,
+                                                      child: Text(
+                                                        providerContext
+                                                                .userName
+                                                                .isNotEmpty
+                                                            ? providerContext
+                                                                .userName[0]
+                                                                .toUpperCase()
+                                                            : '?',
+                                                        style: const TextStyle(
+                                                          fontSize: 48,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color:
+                                                              Constants.blackColor,
+                                                        ),
                                                       ),
                                                     ),
-                                                  ),
+                                            ),
                                           ),
                                           SizedBox(
                                             width:
