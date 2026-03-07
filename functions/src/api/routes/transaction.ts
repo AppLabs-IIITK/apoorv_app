@@ -72,12 +72,28 @@ router.post("/", async (req, res) => {
       const fromName = (fromData.name || fromData.fullName || "").toString();
       const toName = (toData.name || toData.fullName || "").toString();
 
+      let adminOk: boolean | null = null;
+      const allowAdminBypass = async () => {
+        if (adminOk !== null) return adminOk;
+
+        const configRef = db.collection("app_config").doc("global");
+        const configSnap = await t.get(configRef);
+        const fromEmailNorm = (fromEmail || "").trim().toLowerCase();
+
+        adminOk =
+          !!fromEmailNorm &&
+          (((configSnap.get("adminEmails") as string[] | undefined) ?? []).some(
+            (e) => (e || "").trim().toLowerCase() === fromEmailNorm,
+          ));
+        return adminOk;
+      };
+
       if (mode === "shop") {
         if (!isShopkeeper) {
           throw new Error("not-shopkeeper");
         }
-        if (amount > 150) {
-          throw new Error("Cannot send more than 150");
+        if (amount > 150 && !(await allowAdminBypass())) {
+          throw new Error("shop-limit-exceeded");
         }
         if (fromShopPoints < amount) {
           throw new Error("insufficient-shop-points");
@@ -89,8 +105,8 @@ router.post("/", async (req, res) => {
           .where("type", "==", "shop")
           .limit(1);
         const existingSnap = await t.get(existingQuery);
-        if (!existingSnap.empty) {
-          throw new Error("Already sent points to this person");
+        if (!existingSnap.empty && !(await allowAdminBypass())) {
+          throw new Error("shop-limit-reached");
         }
 
         t.update(fromRef, {shopPoints: fromShopPoints - amount});
