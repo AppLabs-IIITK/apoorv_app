@@ -336,7 +336,10 @@ class _Profile2ScreenState extends State<Profile2Screen> {
                                         style: const TextStyle(
                                             color: Constants.blackColor,
                                             fontSize: 16)),
-                                    if (providerContext.fromCollege) ...[
+                                    if (providerContext.fromCollege &&
+                                        (providerContext.userRollNo ?? '')
+                                            .trim()
+                                            .isNotEmpty) ...[
                                       const Text('Roll No',
                                           style: TextStyle(
                                               fontWeight: FontWeight.bold,

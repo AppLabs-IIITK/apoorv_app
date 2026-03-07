@@ -209,7 +209,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                       const TextStyle(color: Colors.black),
                                 )),
                             Constants.gap,
-                            if (_isFromCollege) ...[
+                            if (_isFromCollege &&
+                                userRollNoController.text.trim().isNotEmpty) ...[
                               TextFormField(
                                   controller: userRollNoController,
                                   enabled: false,

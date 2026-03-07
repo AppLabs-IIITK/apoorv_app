@@ -43,13 +43,15 @@ class UserProvider extends ChangeNotifier {
 
   void changeSameCollegeDetails({
     required String newUserName,
-    required String newUserRollNo,
+    String? newUserRollNo,
     required String newUserPhNo,
   }) {
     userName = newUserName;
     userPhNo = newUserPhNo;
     userCollegeName = 'IIIT Kottayam';
-    userRollNo = newUserRollNo;
+    userRollNo = (newUserRollNo == null || newUserRollNo.trim().isEmpty)
+        ? null
+        : newUserRollNo.trim();
     fromCollege = true;
     notifyListeners();
   }
@@ -143,9 +145,11 @@ class UserProvider extends ChangeNotifier {
     // print("res: $res");
     if (res['success']) {
       if (res['fromCollege']) {
+        final roll = res['rollNumber'];
         changeSameCollegeDetails(
           newUserName: res['fullName'],
-          newUserRollNo: res['rollNumber'],
+          // rollNumber may be null/absent for staff emails like registrar@...
+          newUserRollNo: roll is String ? roll : null,
           newUserPhNo: res['phone'],
         );
       } else {
