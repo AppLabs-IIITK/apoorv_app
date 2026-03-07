@@ -29,7 +29,7 @@ enum TxnFilter {
   received,
   shopSent,
   shopReceived,
-  transferReceived,
+  transferSent,
 }
 
 enum TxnSort { dateDesc, amountDesc }
@@ -133,8 +133,8 @@ class _InspectTransactionsScreenState extends State<InspectTransactionsScreen> {
       case TxnFilter.shopReceived:
         items = items.where((t) => _isReceived(t) && _txnType(t) == 'shop');
         break;
-      case TxnFilter.transferReceived:
-        items = items.where((t) => _isReceived(t) && _txnType(t) == 'user');
+      case TxnFilter.transferSent:
+        items = items.where((t) => _isSent(t) && _txnType(t) == 'user');
         break;
       case TxnFilter.all:
         break;
@@ -157,26 +157,28 @@ class _InspectTransactionsScreenState extends State<InspectTransactionsScreen> {
     int received = 0;
     int shopSent = 0;
     int shopReceived = 0;
-    int transferReceived = 0;
+    int transferSent = 0;
 
     for (final txn in _txns) {
       final amt = _txnAmount(txn);
       final type = _txnType(txn);
       if (_isSent(txn)) {
         sent += amt;
-        if (type == 'shop') shopSent += amt;
+        if (type == 'shop') {
+          shopSent += amt;
+        } else {
+          transferSent += amt;
+        }
       }
       if (_isReceived(txn)) {
         received += amt;
         if (type == 'shop') {
           shopReceived += amt;
-        } else {
-          transferReceived += amt;
         }
       }
     }
 
-    final net = received - sent;
+    final net = received - transferSent;
     final unaccounted = _currentPoints - net;
     return {
       'sent': sent,
@@ -186,7 +188,7 @@ class _InspectTransactionsScreenState extends State<InspectTransactionsScreen> {
       'unaccounted': unaccounted,
       'shopSent': shopSent,
       'shopReceived': shopReceived,
-      'transferReceived': transferReceived,
+      'transferSent': transferSent,
     };
   }
 
@@ -258,17 +260,13 @@ class _InspectTransactionsScreenState extends State<InspectTransactionsScreen> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _statTile('Total Sent', totals['sent']!),
+                  _statTile('Transfer Sent', totals['transferSent']!),
                   _statTile('Total Received', totals['received']!),
                   _statTile('Net', totals['net']!),
                   _statTile('Total Points', totals['current']!),
                   _statTile('Unaccounted', totals['unaccounted']!),
-                  _statTile('Shop Sent', totals['shopSent']!,
-                      color: Constants.yellowColor),
-                  _statTile('Shop Received', totals['shopReceived']!,
-                      color: Constants.greenColor),
-                  _statTile('Transfer Received', totals['transferReceived']!,
-                      color: Constants.silverColor),
+                  _statTile('Shop Sent', totals['shopSent']!),
+                  _statTile('Shop Received', totals['shopReceived']!),
                 ],
               ),
               const SizedBox(height: 12),
@@ -306,10 +304,9 @@ class _InspectTransactionsScreenState extends State<InspectTransactionsScreen> {
                           _filterChip('All', TxnFilter.all),
                           _filterChip('Sent', TxnFilter.sent),
                           _filterChip('Received', TxnFilter.received),
+                          _filterChip('Transfer Sent', TxnFilter.transferSent),
                           _filterChip('Shop Sent', TxnFilter.shopSent),
                           _filterChip('Shop Received', TxnFilter.shopReceived),
-                          _filterChip(
-                              'Transfer Received', TxnFilter.transferReceived),
                         ],
                       ),
                     ),
