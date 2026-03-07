@@ -277,7 +277,7 @@ class _AllEventsScreenState extends State<AllEventsScreen>
                 children: [
                   Consumer<AppConfigProvider>(
                     builder: (context, config, _) {
-                      if (!config.isAdmin) {
+                      if (!config.canManageContent) {
                         return Text(
                           event.title,
                           style: TextStyle(

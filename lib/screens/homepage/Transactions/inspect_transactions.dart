@@ -67,7 +67,6 @@ class _InspectTransactionsScreenState extends State<InspectTransactionsScreen> {
           .collection('transactions')
           .where('involvedPartiesEmails', arrayContains: email)
           .orderBy('updatedAt', descending: true)
-          .limit(500)
           .get();
 
       _txns = txSnap.docs

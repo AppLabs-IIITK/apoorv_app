@@ -10,7 +10,7 @@ import 'marker_dialogs.dart';
 class MapMarkerLayer extends StatelessWidget {
   final List<MapMarker> markers;
   final Function(MapMarker) onMarkerTapped;
-  /// If provided, shows a "Move Location" option in the long-press menu (admin only).
+  /// If provided, shows a "Move Location" option in the long-press menu.
   final Function(MapMarker)? onMoveLocation;
 
   const MapMarkerLayer({
@@ -32,7 +32,9 @@ class MapMarkerLayer extends StatelessWidget {
           point: marker.position,
           child: GestureDetector(
             onTap: () => onMarkerTapped(marker),
-            onLongPress: config.isAdmin ? () => _showMarkerOptions(context, marker) : null,
+            onLongPress: config.canManageContent
+                ? () => _showMarkerOptions(context, marker)
+                : null,
             child: _buildMarkerWidget(marker),
           ),
         );

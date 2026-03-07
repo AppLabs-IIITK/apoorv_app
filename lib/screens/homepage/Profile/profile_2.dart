@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:apoorv_app/providers/app_config_provider.dart';
 import 'package:apoorv_app/providers/user_info_provider.dart';
+import 'package:apoorv_app/screens/homepage/Profile/manage_shopkeepers.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -96,6 +98,7 @@ class _Profile2ScreenState extends State<Profile2Screen> {
                 if (snapshot.data['success']) {
                   Provider.of<UserProvider>(ctx);
                   var providerContext = ctx.read<UserProvider>();
+                  final config = ctx.watch<AppConfigProvider>();
                   final useShopkeeperPoints = providerContext.isShopkeeper &&
                       providerContext.shopkeeperModeEnabled;
                   final displayPoints = useShopkeeperPoints
@@ -105,11 +108,38 @@ class _Profile2ScreenState extends State<Profile2Screen> {
                       useShopkeeperPoints ? "Shop Coins" : "Apoorv Coins";
 
                   return Scaffold(
-                    floatingActionButton: FloatingActionButton(
-                      heroTag: null,
-                      onPressed: () => _updateProfileData(),
-                      child: const Icon(Icons.refresh_rounded),
-                    ),
+                    floatingActionButton: config.canManageContent
+                        ? Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              FloatingActionButton.small(
+                                heroTag: null,
+                                tooltip: 'Manage Shop Keepers',
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const ManageShopkeepersScreen(),
+                                    ),
+                                  );
+                                },
+                                child: const Icon(Icons.storefront_outlined),
+                              ),
+                              const SizedBox(height: 10),
+                              FloatingActionButton.small(
+                                heroTag: null,
+                                tooltip: 'Refresh Profile',
+                                onPressed: () => _updateProfileData(),
+                                child: const Icon(Icons.refresh_rounded),
+                              ),
+                            ],
+                          )
+                        : FloatingActionButton(
+                            heroTag: null,
+                            onPressed: () => _updateProfileData(),
+                            child: const Icon(Icons.refresh_rounded),
+                          ),
                     body: Container(
                       // height: MediaQuery.of(context).size.height -
                       //     kBottomNavigationBarHeight,

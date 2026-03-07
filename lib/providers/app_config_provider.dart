@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 class AppConfigProvider extends ChangeNotifier {
   List<String> _adminEmails = [];
+  List<String> _subAdminEmails = [];
   List<String> _shopkeeperEmails = [];
   String _mode = 'production';
   String _apiMode = 'cloud_functions';
@@ -19,16 +20,37 @@ class AppConfigProvider extends ChangeNotifier {
 
   /// Returns true if the currently logged-in user's email is in adminEmails.
   bool get isAdmin {
-    final email = FirebaseAuth.instance.currentUser?.email;
+    final email = _currentEmail;
     if (email == null) return false;
     return _adminEmails.contains(email);
   }
 
+  /// Returns true if the currently logged-in user's email is in subAdminEmails.
+  bool get isSubAdmin {
+    final email = _currentEmail;
+    if (email == null) return false;
+    return _subAdminEmails.contains(email);
+  }
+
+  /// True for users who can manage feed/maps/events/shopkeepers.
+  bool get canManageContent => isAdmin || isSubAdmin;
+
   /// Returns true if the currently logged-in user's email is in shopkeeperEmails.
   bool get isShopkeeper {
-    final email = FirebaseAuth.instance.currentUser?.email;
+    final email = _currentEmail;
     if (email == null) return false;
     return _shopkeeperEmails.contains(email);
+  }
+
+  String? get _currentEmail =>
+      FirebaseAuth.instance.currentUser?.email?.trim().toLowerCase();
+
+  List<String> _normalizeEmails(dynamic value) {
+    if (value is! List) return [];
+    return value
+        .map((e) => e.toString().trim().toLowerCase())
+        .where((e) => e.isNotEmpty)
+        .toList();
   }
 
   /// Fetches the global config document from Firestore exactly once.
@@ -48,20 +70,23 @@ class AppConfigProvider extends ChangeNotifier {
       if (doc.exists && doc.data() != null) {
         final data = doc.data()!;
 
-        _adminEmails = List<String>.from(data['adminEmails'] ?? []);
-        _shopkeeperEmails = List<String>.from(data['shopkeeperEmails'] ?? []);
+        _adminEmails = _normalizeEmails(data['adminEmails']);
+        _subAdminEmails = _normalizeEmails(data['subAdminEmails']);
+        _shopkeeperEmails = _normalizeEmails(data['shopkeeperEmails']);
         _mode = (data['mode'] as String?) ?? 'production';
         _apiMode = (data['apiMode'] as String?) ?? 'cloud_functions';
       } else {
         print('AppConfig: app_config/global not found in Firestore.');
         _adminEmails = [];
+        _subAdminEmails = [];
         _shopkeeperEmails = [];
       }
 
       _isLoaded = true;
     } catch (e) {
-      print('AppConfig: Failed to fetch config — $e');
+      print('AppConfig: Failed to fetch config - $e');
       _adminEmails = [];
+      _subAdminEmails = [];
       _shopkeeperEmails = [];
       _isLoaded = true;
     } finally {
@@ -73,6 +98,7 @@ class AppConfigProvider extends ChangeNotifier {
   /// Call this on logout to clear the cached config.
   void clearConfig() {
     _adminEmails = [];
+    _subAdminEmails = [];
     _shopkeeperEmails = [];
     _mode = 'production';
     _apiMode = 'cloud_functions';

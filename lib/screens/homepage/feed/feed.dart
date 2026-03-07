@@ -161,7 +161,7 @@ class _FeedScreenState extends State<FeedScreen> {
                 } else if (snapshot.data['success']) {
                   var providerContext = context.read<UserProvider>();
                   final config = context.watch<AppConfigProvider>();
-                  final isAdmin = config.isAdmin;
+                  final canManageContent = config.canManageContent;
 
                   var data = (snapshot.data['body'] as List?) ?? [];
 
@@ -297,7 +297,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                 horizontal:
                                     MediaQuery.of(context).size.width * 0.05),
                             width: double.infinity,
-                            child: isAdmin
+                            child: canManageContent
                                 ? Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
@@ -356,9 +356,11 @@ class _FeedScreenState extends State<FeedScreen> {
                                 primary: false,
                                 padding: const EdgeInsets.symmetric(vertical: 4),
                                 itemCount: data.length +
-                                    (isAdmin && _editMode ? 1 : 0),
+                                    (canManageContent && _editMode ? 1 : 0),
                                 itemBuilder: (BuildContext context, int i) {
-                                  if (isAdmin && _editMode && i == data.length) {
+                                  if (canManageContent &&
+                                      _editMode &&
+                                      i == data.length) {
                                     return Card(
                                       margin: EdgeInsets.only(
                                         left: MediaQuery.of(context).size.width * 0.03,
@@ -404,7 +406,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                         (imageUrl != null && imageUrl.isNotEmpty)
                                             ? imageUrl
                                             : null,
-                                    editMode: isAdmin && _editMode,
+                                    editMode: canManageContent && _editMode,
                                     onEdit: () => showAddOrEditDialog(index: i),
                                     onDelete: () async {
                                       final ok = await _confirmDelete();

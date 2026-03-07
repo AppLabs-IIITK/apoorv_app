@@ -71,7 +71,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         actions: [
           Consumer<AppConfigProvider>(
             builder: (context, config, _) {
-              if (!config.isAdmin) return const SizedBox.shrink();
+              if (!config.canManageContent) return const SizedBox.shrink();
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [

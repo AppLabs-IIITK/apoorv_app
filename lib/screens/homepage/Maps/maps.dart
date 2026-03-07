@@ -268,7 +268,9 @@ class _MapsScreenState extends State<MapsScreen> {
                         ),
                         Consumer<AppConfigProvider>(
                           builder: (context, config, _) {
-                            if (!config.isAdmin) return const SizedBox.shrink();
+                            if (!config.canManageContent) {
+                              return const SizedBox.shrink();
+                            }
                             return IconButton(
                               icon: const Icon(Icons.add_circle_outline,
                                   color: Constants.redColor),
@@ -727,7 +729,7 @@ class _MapsScreenState extends State<MapsScreen> {
           // Admin-only: Add new location pin
           Consumer<AppConfigProvider>(
             builder: (context, config, _) {
-              if (!config.isAdmin) return const SizedBox.shrink();
+              if (!config.canManageContent) return const SizedBox.shrink();
               return IconButton(
                 icon: const Icon(Icons.add_location_alt,
                     color: Constants.redColor),
@@ -837,7 +839,7 @@ class _MapsScreenState extends State<MapsScreen> {
                 onMoveLocation: (marker) {
                   final config = Provider.of<AppConfigProvider>(context,
                       listen: false);
-                  if (!config.isAdmin) return;
+                  if (!config.canManageContent) return;
                   _enterPlacementMode(
                     initialPosition: marker.position,
                     hint:
