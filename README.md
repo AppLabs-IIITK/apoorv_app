@@ -2,6 +2,11 @@
 
 Welcome to the repository for the user side of the Apoorv App! This Flutter-based project is dedicated to providing users with an immersive experience tailored to enhance their engagement with the Apoorv community. Below are the key features and guidelines for using this repository effectively.
 
+## User Manuals
+- Users: [docs/USER_MANUAL.md](docs/USER_MANUAL.md)
+- Shopkeepers (Shopkeeper Mode): [docs/SHOPKEEPER_MANUAL.md](docs/SHOPKEEPER_MANUAL.md)
+- Admins/Subadmins: [docs/ADMIN_SUBADMIN_MANUAL.md](docs/ADMIN_SUBADMIN_MANUAL.md)
+
 ## Features
 
 ### Earn Points
