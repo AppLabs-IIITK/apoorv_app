@@ -55,6 +55,7 @@ class MapDataService {
         description: data['description'],
         imageUrl: imageUrl,
         imageFile: imageFile,
+        registrationLink: data['registration_link'],
         color: Color(data['color'] is String
             ? int.parse(data['color'] as String)
             : data['color'] as int),
@@ -64,6 +65,7 @@ class MapDataService {
         day: data['day'] as int,
         time: data['time'] ?? '',
         locationId: data['location_id'] ?? '',
+        endLocationId: data['end_location_id'],
         roomNumber: data['room_number'] ?? '',
         createdAt: DateTime.parse(data['created_at'] as String),
       ));
@@ -72,12 +74,14 @@ class MapDataService {
   }
 
   /// Converts Firestore location docs + pre-built [events] → [MapMarker] list.
+  /// Events with end_location_id will appear in both start and end location markers.
   static List<MapMarker> buildMarkersFromDocs(
       List<QueryDocumentSnapshot> docs, List<Event> events) {
     return docs.map((doc) {
       final data = doc.data() as Map<String, dynamic>;
-      final markerEvents =
-          events.where((e) => e.locationId == doc.id).toList();
+      // Include events where this location is either the start or end location
+      final markerEvents = events.where((e) =>
+          e.locationId == doc.id || e.endLocationId == doc.id).toList();
       return MapMarker(
         id: doc.id,
         locationName: data['location_name'] ?? '',
@@ -207,11 +211,13 @@ class MapDataService {
         'title': event.title,
         'description': event.description,
         'image_file': imageFileName,
+        'registration_link': event.registrationLink,
         'color': event.color.value,
         'text_color': event.txtcolor.value,
         'day': event.day,
         'time': event.time,
         'location_id': event.locationId,
+        'end_location_id': event.endLocationId,
         'room_number': event.roomNumber,
         'created_at': event.createdAt.toIso8601String(),
       });
@@ -229,11 +235,13 @@ class MapDataService {
       final updateData = <String, dynamic>{
         'title': event.title,
         'description': event.description,
+        'registration_link': event.registrationLink,
         'color': event.color.value,
         'text_color': event.txtcolor.value,
         'day': event.day,
         'time': event.time,
         'location_id': event.locationId,
+        'end_location_id': event.endLocationId,
         'room_number': event.roomNumber,
       };
       if (imageFileName != null) {

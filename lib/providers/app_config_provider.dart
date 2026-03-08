@@ -56,7 +56,7 @@ class AppConfigProvider extends ChangeNotifier {
   /// Fetches the global config document from Firestore exactly once.
   /// Call this after authentication is confirmed.
   Future<void> fetchConfig() async {
-    if (_isLoading) return;
+    if (_isLoading || _isLoaded) return;
 
     _isLoading = true;
     notifyListeners();

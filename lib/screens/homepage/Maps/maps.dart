@@ -17,6 +17,7 @@ import 'screens/event_details.dart';
 import 'screens/all_events.dart';
 import 'components/marker_dialogs.dart';
 // import 'services/migration_service.dart'; // TODO: remove after migration
+// import 'services/map_seed_service.dart'; // TODO: remove after migration
 
 // Map boundaries and zoom constraints
 const minZoom = 17.0;
@@ -191,6 +192,31 @@ class _MapsScreenState extends State<MapsScreen> {
       selectedMarkerColor = markerColor;
       selectedTextColor = textColor;
     });
+  }
+
+  String _getLocationName(String locationId) {
+    final marker = markers.firstWhere(
+      (m) => m.id == locationId,
+      orElse: () => MapMarker(
+        id: '',
+        locationName: 'Unknown Location',
+        position: const LatLng(9.754969, 76.650201),
+        markerColor: Colors.grey,
+        textColor: Colors.white,
+        events: [],
+        createdAt: DateTime.now(),
+      ),
+    );
+    return marker.locationName;
+  }
+
+  String _getEventLocationDisplay(Event event) {
+    final startLocationName = _getLocationName(event.locationId);
+    if (event.endLocationId != null && event.endLocationId!.isNotEmpty) {
+      final endLocationName = _getLocationName(event.endLocationId!);
+      return '$startLocationName to $endLocationName';
+    }
+    return startLocationName;
   }
 
   void _handleMarkerTapped(MapMarker marker) {
@@ -396,6 +422,8 @@ class _MapsScreenState extends State<MapsScreen> {
   }
 
   Widget _buildEventCard(Event event) {
+    final locationDisplay = _getEventLocationDisplay(event);
+
     return GestureDetector(
       onTap: () {
         Navigator.pop(context); // Close the bottom sheet
@@ -404,7 +432,7 @@ class _MapsScreenState extends State<MapsScreen> {
           MaterialPageRoute(
             builder: (context) => EventDetailsScreen(
               event: event,
-              locationName: selectedMarker!.locationName,
+              locationName: locationDisplay,
             ),
           ),
         );
@@ -456,6 +484,29 @@ class _MapsScreenState extends State<MapsScreen> {
                         event.description!,
                         style: TextStyle(
                           color: event.txtcolor.withOpacity(0.8),
+                        ),
+                      ),
+                    ),
+                  if (event.hasRegistration)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: event.txtcolor.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: event.txtcolor.withOpacity(0.24),
+                          ),
+                        ),
+                        child: Text(
+                          'Registration Open',
+                          style: TextStyle(
+                            color: event.txtcolor,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ),
@@ -771,7 +822,17 @@ class _MapsScreenState extends State<MapsScreen> {
               );
             },
           ),
-          // ─── TEMPORARY — remove after Supabase → Firestore migration ───
+          // // ─── TEMPORARY — remove after seeding and migration ───
+          // Consumer<AppConfigProvider>(
+          //   builder: (context, config, _) {
+          //     if (!config.isAdmin) return const SizedBox.shrink();
+          //     return IconButton(
+          //       icon: const Icon(Icons.dataset, color: Constants.redColor),
+          //       tooltip: 'Import Apoorv seed data (temp)',
+          //       onPressed: () => MapSeedService.showSeedDialog(context),
+          //     );
+          //   },
+          // ),
           // Consumer<AppConfigProvider>(
           //   builder: (context, config, _) {
           //     if (!config.isAdmin) return const SizedBox.shrink();
@@ -783,7 +844,7 @@ class _MapsScreenState extends State<MapsScreen> {
           //     );
           //   },
           // ),
-          // ───────────────────────────────────────────────────────────────
+          // // ───────────────────────────────────────────────────────────────
           IconButton(
             icon: Icon(_isSatelliteMode ? Icons.map : Icons.satellite),
             color: Constants.redColor,

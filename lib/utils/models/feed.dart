@@ -22,11 +22,13 @@ class Event {
   final String? description;
   final String? imageUrl;
   final String? imageFile;
+  final String? registrationLink;
   final Color color;
   final Color txtcolor;
   final int day; // 1, 2, or 3
   final String time; // e.g. "10:00 AM - 12:00 PM"
-  final String locationId; // ID of the associated marker/location
+  final String locationId; // ID of the associated marker/location (start location for routes)
+  final String? endLocationId; // Optional end location ID for route-based events (e.g., processions)
   final String roomNumber; // Room number within the location
   final DateTime createdAt;
 
@@ -36,14 +38,19 @@ class Event {
     this.description,
     this.imageUrl,
     this.imageFile,
+    this.registrationLink,
     required this.color,
     required this.txtcolor,
     required this.day,
     required this.time,
     required this.locationId,
+    this.endLocationId,
     required this.roomNumber,
     required this.createdAt,
   });
+
+  bool get hasRegistration =>
+      registrationLink != null && registrationLink!.trim().isNotEmpty;
 
   // Helper method to determine floor based on room number
   String get floor {

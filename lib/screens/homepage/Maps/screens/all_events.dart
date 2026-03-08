@@ -2,10 +2,8 @@ import 'package:apoorv_app/screens/homepage/Maps/components/event_image.dart';
 import 'package:apoorv_app/utils/models/feed.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:provider/provider.dart';
 import '../../../../../../constants.dart';
 // import '../../../../../../utils/Models/Feed.dart';
-import '../../../../../providers/app_config_provider.dart';
 import 'event_details.dart';
 
 class AllEventsScreen extends StatefulWidget {
@@ -62,11 +60,19 @@ class _AllEventsScreenState extends State<AllEventsScreen>
     });
 
     try {
-      // Extract all events from markers
+      // Extract all events from markers and deduplicate by ID
       final allEvents = <Event>[];
+      final seenEventIds = <String>{};
 
       for (final marker in widget.markers) {
         for (final event in marker.events) {
+          // Skip if we've already added this event (for events with end_location_id)
+          if (seenEventIds.contains(event.id)) {
+            continue;
+          }
+
+          seenEventIds.add(event.id);
+
           // Create a copy of the event with the location name
           final eventWithLocation = Event(
             id: event.id,
@@ -74,11 +80,13 @@ class _AllEventsScreenState extends State<AllEventsScreen>
             description: event.description,
             imageUrl: event.imageUrl,
             imageFile: event.imageFile,
+            registrationLink: event.registrationLink,
             color: event.color,
             txtcolor: event.txtcolor,
             day: event.day,
             time: event.time,
             locationId: event.locationId,
+            endLocationId: event.endLocationId,
             roomNumber: event.roomNumber,
             createdAt: event.createdAt,
           );
@@ -161,6 +169,15 @@ class _AllEventsScreenState extends State<AllEventsScreen>
     return marker.locationName;
   }
 
+  String _getLocationDisplayName(Event event) {
+    final startLocationName = _getLocationName(event.locationId);
+    if (event.endLocationId != null && event.endLocationId!.isNotEmpty) {
+      final endLocationName = _getLocationName(event.endLocationId!);
+      return '$startLocationName to $endLocationName';
+    }
+    return startLocationName;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -231,7 +248,7 @@ class _AllEventsScreenState extends State<AllEventsScreen>
   }
 
   Widget _buildEventCard(Event event) {
-    final locationName = _getLocationName(event.locationId);
+    final locationName = _getLocationDisplayName(event);
 
     return GestureDetector(
       onTap: () {
@@ -275,78 +292,14 @@ class _AllEventsScreenState extends State<AllEventsScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Consumer<AppConfigProvider>(
-                    builder: (context, config, _) {
-                      if (!config.canManageContent) {
-                        return Text(
+                         Text(
                           event.title,
                           style: TextStyle(
                             color: event.txtcolor,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
-                        );
-                      }
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              event.title,
-                              style: TextStyle(
-                                color: event.txtcolor,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          PopupMenuButton<String>(
-                            icon: Icon(Icons.more_vert, color: event.txtcolor),
-                            onSelected: (value) {
-                              if (value == 'edit') {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => EventDetailsScreen(
-                                      event: event,
-                                      locationName: locationName,
-                                    ),
-                                  ),
-                                );
-                              } else if (value == 'delete') {
-                                setState(() {
-                                  _allEvents.removeWhere((e) => e.id == event.id);
-                                  _filterEvents();
-                                });
-                              }
-                            },
-                            itemBuilder: (context) => [
-                              const PopupMenuItem(
-                                value: 'edit',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.edit, size: 18),
-                                    SizedBox(width: 8),
-                                    Text('Edit'),
-                                  ],
-                                ),
-                              ),
-                              const PopupMenuItem(
-                                value: 'delete',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.delete, size: 18, color: Colors.red),
-                                    SizedBox(width: 8),
-                                    Text('Delete', style: TextStyle(color: Colors.red)),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      );
-                    },
-                  ),
+                        ),
                   if (event.description != null &&
                       event.description!.isNotEmpty)
                     Padding(
@@ -358,6 +311,29 @@ class _AllEventsScreenState extends State<AllEventsScreen>
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  if (event.hasRegistration)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: event.txtcolor.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: event.txtcolor.withOpacity(0.22),
+                          ),
+                        ),
+                        child: Text(
+                          'Registration Open',
+                          style: TextStyle(
+                            color: event.txtcolor,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
                     ),
                   Row(

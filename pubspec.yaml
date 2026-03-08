@@ -61,6 +61,7 @@ dependencies:
   shared_preferences: ^2.2.3
   share_plus: ^7.2.2
   path_provider: ^2.1.2
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
@@ -99,6 +100,7 @@ flutter:
   assets:
     - .env
     - assets/
+    - assets/data/
     - assets/images/
     - assets/svgs/
   #   - images/a_dot_burr.jpeg

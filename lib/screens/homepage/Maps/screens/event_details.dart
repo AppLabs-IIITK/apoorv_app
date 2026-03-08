@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../../../constants.dart';
 import '../../../../../providers/app_config_provider.dart';
 import '../components/marker_dialogs.dart';
+import '../services/event_registration_service.dart';
 import '../services/map_data_service.dart';
 import 'package:apoorv_app/utils/share_event/share_event.dart';
 
@@ -40,6 +41,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             description: data['description'] ?? widget.event.description,
             imageUrl: widget.event.imageUrl, // Keep the cached image URL
             imageFile: data['image_file'] ?? widget.event.imageFile,
+            registrationLink:
+                data['registration_link'] ?? widget.event.registrationLink,
             color: Color(data['color'] is String
                 ? int.parse(data['color'] as String)
                 : data['color'] as int),
@@ -49,6 +52,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             day: data['day'] as int,
             time: data['time'] ?? widget.event.time,
             locationId: data['location_id'] ?? widget.event.locationId,
+            endLocationId: data['end_location_id'] ?? widget.event.endLocationId,
             roomNumber: data['room_number'] ?? widget.event.roomNumber,
             createdAt: DateTime.parse(data['created_at'] as String),
           );
@@ -136,7 +140,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     Icons.location_on,
                     '${widget.locationName}${event.roomNumber.isNotEmpty ? ' - Room ${event.roomNumber}' : ''}',
                   ),
-
                   // Day and time
                   _buildInfoRow(
                     Icons.calendar_today,
@@ -146,6 +149,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     Icons.access_time,
                     event.time,
                   ),
+                  if (event.hasRegistration)
+                    _buildInfoRow(
+                      Icons.app_registration,
+                      'Registration available',
+                    ),
 
                   const SizedBox(height: 24),
 
@@ -171,8 +179,28 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   ],
 
                   const SizedBox(height: 32),
-
-                  // Share button
+                  if (event.hasRegistration)
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () => EventRegistrationService
+                            .openRegistrationLink(
+                          context,
+                          event.registrationLink,
+                        ),
+                        icon: const Icon(Icons.app_registration),
+                        label: const Text('Register Now'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Constants.redColor,
+                          foregroundColor: Constants.whiteColor,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (event.hasRegistration) const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(

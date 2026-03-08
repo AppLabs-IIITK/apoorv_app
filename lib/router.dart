@@ -22,11 +22,19 @@ class Routing extends StatefulWidget {
 }
 
 class _RoutingState extends State<Routing> {
+  void _scheduleAppConfigFetch() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final appConfig = context.read<AppConfigProvider>();
+      if (!appConfig.isLoaded && !appConfig.isLoading) {
+        appConfig.fetchConfig();
+      }
+    });
+  }
+
   Future<int> getStartupPage(BuildContext context) async {
     Provider.of<UserProvider>(context, listen: false);
-    if (context.mounted) {
-      Provider.of<AppConfigProvider>(context, listen: false).fetchConfig();
-    }
+
     if (FirebaseAuth.instance.currentUser == null) {
       return 0;
     }
@@ -75,6 +83,7 @@ class _RoutingState extends State<Routing> {
   @override
   void initState() {
     super.initState();
+    _scheduleAppConfigFetch();
     _myFuture = getStartupPage(context);
   }
 

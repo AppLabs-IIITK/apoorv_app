@@ -209,7 +209,14 @@ class _AcademicBlockMarkersState extends State<AcademicBlockMarkers> {
                       _selectedFloor);
               return matchesSearch && matchesFloor;
             }).toList();
+
+            // Sort lexicographically by room name
+            _filteredMarkers.sort((a, b) =>
+              a.locationName.compareTo(b.locationName));
           }
+
+          // Apply initial filtering and sorting
+          filterMarkers();
 
           return DraggableScrollableSheet(
             initialChildSize: 0.6,

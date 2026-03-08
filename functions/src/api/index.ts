@@ -3,6 +3,7 @@ import express from "express";
 import {healthRouter} from "./routes/health.js";
 import {authRouter} from "./routes/auth.js";
 import {transactionRouter} from "./routes/transaction.js";
+import {exportRouter} from "./routes/export.js";
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use(cors({
 app.use("/health", healthRouter);
 app.use("/auth", authRouter);
 app.use("/transaction", transactionRouter);
+app.use("/export", exportRouter);
 
 app.use((req, res) => {
   res.status(404).json({error: "Not found"});

@@ -193,6 +193,7 @@ class MarkerDialogs {
     String description = '';
     String roomNumber = '';
     String time = '';
+    String registrationLink = '';
     int day = 1;
     String? imageFileName;
     String? eventImageUrl;
@@ -250,6 +251,12 @@ class MarkerDialogs {
                         onChanged: (value) => time = value,
                       ),
                       const SizedBox(height: 16),
+                      _buildTextField(
+                        label: 'Registration Link',
+                        hint: 'https://...',
+                        onChanged: (value) => registrationLink = value,
+                      ),
+                      const SizedBox(height: 16),
                       _buildDaySelector(
                         selectedDay: day,
                         onDaySelected: (value) {
@@ -295,11 +302,15 @@ class MarkerDialogs {
                               description: description,
                               imageUrl: eventImageUrl,
                               imageFile: imageFileName,
+                              registrationLink: registrationLink.trim().isEmpty
+                                  ? null
+                                  : registrationLink.trim(),
                               color: eventColor,
                               txtcolor: textColor,
                               day: day,
                               time: time,
                               locationId: locationId,
+                              endLocationId: null,
                               roomNumber: roomNumber,
                               createdAt: DateTime.now(),
                             );
@@ -345,6 +356,7 @@ class MarkerDialogs {
     String description = event.description ?? '';
     String roomNumber = event.roomNumber;
     String time = event.time;
+    String registrationLink = event.registrationLink ?? '';
     int day = event.day;
     String? imageFileName;
     String? eventImageUrl = event.imageUrl;
@@ -402,6 +414,12 @@ class MarkerDialogs {
                         onChanged: (value) => time = value,
                       ),
                       const SizedBox(height: 16),
+                      _buildTextField(
+                        label: 'Registration Link',
+                        initialValue: registrationLink,
+                        onChanged: (value) => registrationLink = value,
+                      ),
+                      const SizedBox(height: 16),
                       _buildDaySelector(
                         selectedDay: day,
                         onDaySelected: (value) {
@@ -447,11 +465,15 @@ class MarkerDialogs {
                               description: description,
                               imageUrl: eventImageUrl,
                               imageFile: imageFileName ?? event.imageFile,
+                              registrationLink: registrationLink.trim().isEmpty
+                                  ? null
+                                  : registrationLink.trim(),
                               color: eventColor,
                               txtcolor: textColor,
                               day: day,
                               time: time,
                               locationId: event.locationId,
+                              endLocationId: event.endLocationId,
                               roomNumber: roomNumber,
                               createdAt: event.createdAt,
                             );
