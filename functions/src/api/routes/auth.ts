@@ -9,6 +9,9 @@ const GOOGLE_CLIENT_ID =
   "389271534594-f2ki17289n40i9iei81s0f48g13sf04k.apps.googleusercontent.com";
 
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+const SYSTEM_UID = "System";
+const SYSTEM_NAME = "System";
+const SYSTEM_EMAIL = "system@iiitkottayam.ac.in";
 
 interface GoogleAuthRequest {
   idToken?: string;
@@ -82,7 +85,7 @@ router.post("/google", async (req, res) => {
       return;
     }
 
-    let googleData: {email: string; emailVerified: boolean; photoUrl: string | null};
+    let googleData: {email: string; emailVerified: boolean; name?: string | null; photoUrl: string | null};
     try {
       if (idToken) {
         googleData = await verifyGoogleIdToken(idToken);
@@ -91,6 +94,7 @@ router.post("/google", async (req, res) => {
         googleData = {
           email: decodedToken.email || "",
           emailVerified: decodedToken.email_verified || false,
+          name: decodedToken.name || null,
           photoUrl: decodedToken.picture || null,
         };
       } else {
@@ -159,6 +163,7 @@ router.post("/google", async (req, res) => {
     const isNewUser = !snap.exists;
 
     if (isNewUser) {
+      const welcomePoints = fromCollege ? 50 : 0;
       await userDoc.set({
         uid: firebaseUser.uid,
         email,
@@ -169,11 +174,28 @@ router.post("/google", async (req, res) => {
         phone: "",
         fromCollege,
         collegeName: fromCollege ? "IIIT Kottayam" : "Outside College",
-        points: fromCollege ? 50 : 0,
+        points: welcomePoints,
         name: null,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         lastLogin: admin.firestore.FieldValue.serverTimestamp(),
       });
+
+      if (welcomePoints > 0) {
+        const txnRef = admin.firestore().collection("transactions").doc();
+        await txnRef.set({
+          from: SYSTEM_UID,
+          to: firebaseUser.uid,
+          involvedPartiesUids: [SYSTEM_UID, firebaseUser.uid],
+          involvedPartiesEmails: [SYSTEM_EMAIL, email.trim().toLowerCase()],
+          fromName: SYSTEM_NAME,
+          toName: emailLocalPart,
+          fromEmail: SYSTEM_EMAIL,
+          toEmail: email,
+          transactionValue: welcomePoints,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          type: "system",
+        });
+      }
     } else {
       await userDoc.update({
         email,

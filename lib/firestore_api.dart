@@ -4,6 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 class FirestoreApi {
   static const String googleClientId =
       '389271534594-f2ki17289n40i9iei81s0f48g13sf04k.apps.googleusercontent.com';
+  static const String systemUid = 'System';
+  static const String systemName = 'System';
+  static const String systemEmail = 'system@iiitkottayam.ac.in';
 
   /// Emulates POST /auth/google
   ///
@@ -74,6 +77,7 @@ class FirestoreApi {
       final isNewUser = !snap.exists;
 
       if (isNewUser) {
+        final welcomePoints = fromCollege ? 50 : 0;
         await userDoc.set({
           'uid': user.uid,
           'email': email,
@@ -83,11 +87,27 @@ class FirestoreApi {
           'phone': '',
           'fromCollege': fromCollege,
           'collegeName': fromCollege ? 'IIIT Kottayam' : 'Outside College',
-          'points': fromCollege ? 50 : 0,
+          'points': welcomePoints,
           'name': null,
           'createdAt': FieldValue.serverTimestamp(),
           'lastLogin': FieldValue.serverTimestamp(),
         });
+
+        if (welcomePoints > 0) {
+          await FirebaseFirestore.instance.collection('transactions').doc().set({
+            'from': systemUid,
+            'to': user.uid,
+            'involvedPartiesUids': [systemUid, user.uid],
+            'involvedPartiesEmails': [systemEmail, email.trim().toLowerCase()],
+            'fromName': systemName,
+            'toName': emailLocalPart,
+            'fromEmail': systemEmail,
+            'toEmail': email,
+            'transactionValue': welcomePoints,
+            'updatedAt': FieldValue.serverTimestamp(),
+            'type': 'system',
+          });
+        }
       } else {
         // Do nothing for local version. Server version updates lastLogin timestamp and other details.
       }

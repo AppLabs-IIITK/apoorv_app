@@ -36,6 +36,14 @@ class TransactionDetailsModal extends StatefulWidget {
 class _TransactionDetailsModalState extends State<TransactionDetailsModal> {
   String _fromImage = '';
   String _toImage = '';
+  static const String _systemUid = 'system';
+  static const String _systemEmail = 'system@iiitkottayam.ac.in';
+
+  bool _isSystemIdentity(String uid, String email) {
+    final uidNorm = uid.trim().toLowerCase();
+    final emailNorm = email.trim().toLowerCase();
+    return uidNorm == _systemUid || emailNorm == _systemEmail;
+  }
 
   @override
   void initState() {
@@ -84,8 +92,10 @@ class _TransactionDetailsModalState extends State<TransactionDetailsModal> {
     required String label,
     required bool isCurrentUser,
   }) {
+    final canPay = !isCurrentUser && !_isSystemIdentity(uid, email);
+
     return InkWell(
-      onTap: isCurrentUser
+      onTap: !canPay
           ? null
           : () {
               Navigator.pop(context);
@@ -170,7 +180,7 @@ class _TransactionDetailsModalState extends State<TransactionDetailsModal> {
                   ),
                 ),
               ),
-            if (!isCurrentUser)
+            if (canPay)
               const Padding(
                 padding: EdgeInsets.only(top: 4),
                 child: Text(
