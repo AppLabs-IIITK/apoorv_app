@@ -66,6 +66,8 @@ router.post("/", async (req, res) => {
       const fromShopPoints =
         typeof fromData.shopPoints === "number" ? fromData.shopPoints : 0;
       const isShopkeeper = fromData.isShopkeeper === true;
+      const fromCollege = fromData.fromCollege === true;
+      const toCollege = toData.fromCollege === true;
 
       const fromEmail = (fromData.email || decoded.email || "").toString();
       const toEmail = (toData.email || "").toString();
@@ -112,6 +114,9 @@ router.post("/", async (req, res) => {
         t.update(fromRef, {shopPoints: fromShopPoints - amount});
         t.update(toRef, {points: toPoints + amount});
       } else {
+        if (fromCollege && !toCollege) {
+          throw new Error("college-to-outside-not-allowed");
+        }
         if (fromPoints < amount) {
           throw new Error("insufficient-points");
         }
@@ -176,6 +181,13 @@ router.post("/", async (req, res) => {
       res.status(400).json({
         success: false,
         message: "You have already rewarded this user with shop points",
+      });
+      return;
+    }
+    if (msg === "college-to-outside-not-allowed") {
+      res.status(400).json({
+        success: false,
+        message: "College users cannot send points to outside-college users",
       });
       return;
     }

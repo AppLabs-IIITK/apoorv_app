@@ -223,6 +223,8 @@ class FirestoreApi {
         final fromShopPoints =
             (fromData['shopPoints'] is int) ? fromData['shopPoints'] as int : 0;
         final isShopkeeper = fromData['isShopkeeper'] == true;
+        final fromCollege = fromData['fromCollege'] == true;
+        final toCollege = toData['fromCollege'] == true;
 
         final fromEmail = ((fromData['email'] ?? currentUser.email ?? '') as String);
         final toEmail = ((toData['email'] ?? '') as String);
@@ -263,6 +265,9 @@ class FirestoreApi {
           t.update(fromRef, {'shopPoints': fromShopPoints - parsedAmount});
           t.update(toRef, {'points': toPoints + parsedAmount});
         } else {
+          if (fromCollege && !toCollege) {
+            throw _TxnException('college-to-outside-not-allowed');
+          }
           if (fromPoints < parsedAmount) {
             throw _TxnException('insufficient-points');
           }
@@ -323,6 +328,12 @@ class FirestoreApi {
           'message': 'You have already rewarded this user with shop points',
         };
       }
+      if (e.code == 'college-to-outside-not-allowed') {
+        return {
+          'success': false,
+          'message': 'College users cannot send points to outside-college users',
+        };
+      }
       if (e.code == 'from-user-not-found' || e.code == 'to-user-not-found') {
         return {'success': false, 'message': 'User not found'};
       }
@@ -349,4 +360,3 @@ class _TxnException implements Exception {
   final String code;
   _TxnException(this.code);
 }
-
