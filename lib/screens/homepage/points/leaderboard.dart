@@ -31,6 +31,8 @@ class _LeaderboardState extends State<Leaderboard> {
   bool _isLoadingInitial = true;
   bool _isLoadingMore = false;
   String? _error;
+  bool _shownOnlyOneMessage = false;
+  bool _shownTopMessage = false;
 
   Future<void> _seedLeaderboardAndTransactions() async {
     try {
@@ -229,7 +231,8 @@ class _LeaderboardState extends State<Leaderboard> {
   Widget build(BuildContext context) {
     final providerContext = context.read<UserProvider>();
 
-    if (_users.length == 1) {
+    if (_users.length == 1 && !_shownOnlyOneMessage) {
+      _shownOnlyOneMessage = true;
       Future.delayed(
           Duration.zero,
           () {
@@ -238,7 +241,10 @@ class _LeaderboardState extends State<Leaderboard> {
                 context, "Looks like you are the only one here!");
           });
     }
-    if (_users.isNotEmpty && _users[0]['uid'] == providerContext.uid) {
+    if (_users.isNotEmpty &&
+        _users[0]['uid'] == providerContext.uid &&
+        !_shownTopMessage) {
+      _shownTopMessage = true;
       Future.delayed(
           Duration.zero,
           () {

@@ -1,8 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../constants.dart';
 import '../../../widgets/spinning_apoorv.dart';
+import '../../../widgets/transaction_details_modal.dart';
 
 class InspectTransactionsScreen extends StatefulWidget {
   static const routeName = '/inspect-transactions';
@@ -115,6 +118,38 @@ class _InspectTransactionsScreenState extends State<InspectTransactionsScreen> {
     if (raw is DateTime) return raw.toLocal();
     return DateTime.tryParse(raw?.toString() ?? '')?.toLocal() ??
         DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  void _showTransactionDetails(Map<String, dynamic> txn) {
+    final fromUid = txn['from']?.toString() ?? '';
+    final toUid = txn['to']?.toString() ?? '';
+    final fromName = txn['fromName']?.toString() ?? 'Unknown';
+    final toName = txn['toName']?.toString() ?? 'Unknown';
+    final fromEmail = txn['fromEmail']?.toString() ?? '';
+    final toEmail = txn['toEmail']?.toString() ?? '';
+    final points = _txnAmount(txn);
+    final formattedTime =
+        DateFormat("MMMM d, yyyy 'at' h:mm a").format(_txnTime(txn));
+    final myUid = FirebaseAuth.instance.currentUser?.uid;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color.fromRGBO(18, 18, 18, 1),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => TransactionDetailsModal(
+        fromUid: fromUid,
+        toUid: toUid,
+        fromName: fromName,
+        toName: toName,
+        fromEmail: fromEmail,
+        toEmail: toEmail,
+        points: points,
+        formattedTime: formattedTime,
+        myUid: myUid,
+      ),
+    );
   }
 
   List<Map<String, dynamic>> _filteredTxns() {
@@ -329,90 +364,95 @@ class _InspectTransactionsScreenState extends State<InspectTransactionsScreen> {
                         ? Constants.yellowColor
                         : (isSent ? Constants.redColorAlt : Constants.greenColor);
 
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color.fromRGBO(30, 30, 30, 1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: accent.withOpacity(0.7),
-                          width: 1,
+                    return InkWell(
+                      onTap: () => _showTransactionDetails(txn),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color.fromRGBO(30, 30, 30, 1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: accent.withOpacity(0.7),
+                            width: 1,
+                          ),
                         ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      (name ?? 'Unknown').toString(),
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    if (isShop) ...[
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: Constants.yellowColor,
-                                          borderRadius: BorderRadius.circular(10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        (name ?? 'Unknown').toString(),
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
                                         ),
-                                        child: const Text(
-                                          'SHOP',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.black,
+                                      ),
+                                      if (isShop) ...[
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Constants.yellowColor,
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          child: const Text(
+                                            'SHOP',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black,
+                                            ),
                                           ),
                                         ),
-                                      ),
+                                      ],
                                     ],
-                                  ],
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '${time.toLocal()}',
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.white60,
                                   ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  isShop
-                                      ? (isSent
-                                          ? 'Shopkeeper sent'
-                                          : 'Received from shopkeeper')
-                                      : (isSent
-                                          ? 'Transfer sent'
-                                          : 'Transfer received'),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: accent,
-                                    fontWeight: FontWeight.w600,
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${time.toLocal()}',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.white60,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    isShop
+                                        ? (isSent
+                                            ? 'Shopkeeper sent'
+                                            : 'Received from shopkeeper')
+                                        : (isSent
+                                            ? 'Transfer sent'
+                                            : 'Transfer received'),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: accent,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          Text(
-                            (isSent ? '- ' : '+ ') + amount.toString(),
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: accent,
+                            Text(
+                              (isSent ? '- ' : '+ ') + amount.toString(),
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: accent,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     );
                   },
