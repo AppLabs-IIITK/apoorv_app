@@ -24,6 +24,9 @@ class Routing extends StatefulWidget {
 class _RoutingState extends State<Routing> {
   Future<int> getStartupPage(BuildContext context) async {
     Provider.of<UserProvider>(context, listen: false);
+    if (context.mounted) {
+      Provider.of<AppConfigProvider>(context, listen: false).fetchConfig();
+    }
     if (FirebaseAuth.instance.currentUser == null) {
       return 0;
     }
@@ -58,11 +61,6 @@ class _RoutingState extends State<Routing> {
       }
       if (hasName) {
         prov.userName = name;
-      }
-
-      // Fetch global app config once
-      if (context.mounted) {
-        Provider.of<AppConfigProvider>(context, listen: false).fetchConfig();
       }
 
       return profileComplete ? 2 : 1;

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'app_config.dart';
+import 'firestore_api.dart';
 
 class APICalls {
   Future<Map<String, dynamic>> getUserDataAPI(String uid, String idToken,
@@ -227,7 +228,7 @@ class APICalls {
     String to,
     int amount,
     // String idToken,
-    {String? mode}
+    {String? mode, bool useFirestoreApi = false}
   ) async {
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -235,6 +236,21 @@ class APICalls {
         return {
           'success': false,
           'message': 'Not signed in',
+        };
+      }
+      if (useFirestoreApi) {
+        final local = await FirestoreApi().transaction(
+          to: to,
+          amount: amount,
+          mode: mode,
+        );
+        return {
+          'success': local['success'] == true,
+          'message': local['message']?.toString() ??
+              (local['success'] == true
+                  ? 'Transaction completed successfully'
+                  : 'Transaction failed'),
+          if (local['transactionId'] != null) 'transactionId': local['transactionId'],
         };
       }
 

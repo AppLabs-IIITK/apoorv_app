@@ -1,4 +1,5 @@
 import '../../../providers/receiver_provider.dart';
+import '../../../providers/app_config_provider.dart';
 import '../../../providers/user_info_provider.dart';
 import '../../../widgets/dialog.dart';
 import '../../../widgets/spinning_apoorv.dart';
@@ -250,6 +251,11 @@ class _PaymentState extends State<Payment> {
                                     : () async {
                                         if (amountController.text.isNotEmpty &&
                                             int.parse(amountController.text) > 0) {
+                                          final useFirestoreApi = Provider.of<AppConfigProvider>(context, listen: false)
+                                                  .apiMode
+                                                  .trim()
+                                                  .toLowerCase() ==
+                                              'firestore';
                                           if (!isProcessing) {
                                             setState(() {
                                               isProcessing = true;
@@ -263,6 +269,7 @@ class _PaymentState extends State<Payment> {
                                             context.read<ReceiverProvider>().uid,
                                             int.parse(amountController.text),
                                             mode: useShopkeeperPoints ? 'shop' : 'user',
+                                            useFirestoreApi: useFirestoreApi,
                                           );
                                           setState(() {
                                             isProcessing = false;

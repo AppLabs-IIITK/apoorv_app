@@ -173,11 +173,12 @@ class UserProvider extends ChangeNotifier {
     String to,
     int amount, {
     String? mode,
+    bool useFirestoreApi = false,
   }) async {
     refreshUID(listen: false);
     // refreshIdToken(listen: false);
     await Future.delayed(
-      const Duration(seconds: 2),
+      const Duration(seconds: 1),
       () {},
     );
     var response = await APICalls().transactionAPI(
@@ -185,6 +186,7 @@ class UserProvider extends ChangeNotifier {
       to,
       amount,
       mode: mode,
+      useFirestoreApi: useFirestoreApi,
       // idToken,
     );
     print("Response from provider-> $response");
