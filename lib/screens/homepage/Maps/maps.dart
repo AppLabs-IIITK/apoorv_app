@@ -817,6 +817,7 @@ class _MapsScreenState extends State<MapsScreen> {
                 MaterialPageRoute(
                   builder: (context) => AllEventsScreen(
                     markers: markers,
+                    events: MapDataService.buildEventsFromDocs(_eventsDocs),
                   ),
                 ),
               );

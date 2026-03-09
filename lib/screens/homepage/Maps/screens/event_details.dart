@@ -141,10 +141,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     '${widget.locationName}${event.roomNumber.isNotEmpty ? ' - Room ${event.roomNumber}' : ''}',
                   ),
                   // Day and time
-                  _buildInfoRow(
-                    Icons.calendar_today,
-                    'Day ${event.day}',
-                  ),
+                  if (event.day != 0)
+                    _buildInfoRow(
+                      Icons.calendar_today,
+                      'Day ${event.day}',
+                    ),
                   _buildInfoRow(
                     Icons.access_time,
                     event.time,

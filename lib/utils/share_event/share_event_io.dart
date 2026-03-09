@@ -9,14 +9,16 @@ import 'package:share_plus/share_plus.dart';
 import 'package:apoorv_app/utils/models/feed.dart';
 
 String _buildShareText(Event event, String locationName) {
-  final where =
-      '$locationName${event.roomNumber.isNotEmpty ? ' - Room ${event.roomNumber}' : ''}';
+  final isOnline = locationName.trim().isEmpty || locationName.trim() == 'Online';
+  final where = isOnline
+      ? 'Online'
+      : '$locationName${event.roomNumber.isNotEmpty ? ' - Room ${event.roomNumber}' : ''}';
   final desc = (event.description ?? '').trim();
   final regLink = (event.registrationLink ?? '').trim();
 
   return <String>[
     event.title.trim(),
-    'Day ${event.day} • ${event.time}',
+    if (event.day != 0) 'Day ${event.day} • ${event.time}' else event.time,
     where,
     if (desc.isNotEmpty) '',
     if (desc.isNotEmpty) desc,

@@ -8,10 +8,12 @@ import 'event_details.dart';
 
 class AllEventsScreen extends StatefulWidget {
   final List<MapMarker> markers;
+  final List<Event> events;
 
   const AllEventsScreen({
     super.key,
     required this.markers,
+    required this.events,
   });
 
   @override
@@ -26,10 +28,12 @@ class _AllEventsScreenState extends State<AllEventsScreen>
   List<Event> _filteredEvents = [];
   bool _isLoading = true;
 
+  bool get _isOnlineTab => _tabController.index == 3;
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(_handleTabChange);
     _loadEvents();
   }
@@ -42,16 +46,21 @@ class _AllEventsScreenState extends State<AllEventsScreen>
   }
 
   void _handleTabChange() {
-    if (!_tabController.indexIsChanging) {
-      final newDay = _tabController.index + 1;
+    if (_tabController.indexIsChanging) return;
 
-      setState(() {
-        _selectedDay = newDay;
-      });
-
-      // Call filter events after state is updated
+    if (_isOnlineTab) {
       _filterEvents();
+      return;
     }
+
+    final newDay = _tabController.index + 1;
+
+    setState(() {
+      _selectedDay = newDay;
+    });
+
+    // Call filter events after state is updated
+    _filterEvents();
   }
 
   Future<void> _loadEvents() async {
@@ -95,6 +104,13 @@ class _AllEventsScreenState extends State<AllEventsScreen>
         }
       }
 
+      // Add any events not attached to a marker (e.g., online events)
+      for (final event in widget.events) {
+        if (seenEventIds.contains(event.id)) continue;
+        seenEventIds.add(event.id);
+        allEvents.add(event);
+      }
+
       setState(() {
         _allEvents = allEvents;
         _isLoading = false;
@@ -118,8 +134,26 @@ class _AllEventsScreenState extends State<AllEventsScreen>
   }
 
   void _filterEvents() {
-    final dayEvents =
-        _allEvents.where((event) => event.day == _selectedDay).toList();
+    if (_isOnlineTab) {
+      final onlineEvents = _allEvents.where((event) {
+        final hasStart = event.locationId.trim().isNotEmpty;
+        final hasEnd = (event.endLocationId ?? '').trim().isNotEmpty;
+        return !hasStart && !hasEnd;
+      }).toList();
+
+      onlineEvents.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
+      setState(() {
+        _filteredEvents = onlineEvents;
+      });
+      return;
+    }
+
+    final dayEvents = _allEvents.where((event) {
+      final hasStart = event.locationId.trim().isNotEmpty;
+      final hasEnd = (event.endLocationId ?? '').trim().isNotEmpty;
+      return event.day == _selectedDay && (hasStart || hasEnd);
+    }).toList();
 
     // Sort by time
     dayEvents.sort((a, b) {
@@ -170,6 +204,12 @@ class _AllEventsScreenState extends State<AllEventsScreen>
   }
 
   String _getLocationDisplayName(Event event) {
+    final hasStart = event.locationId.trim().isNotEmpty;
+    final hasEnd = (event.endLocationId ?? '').trim().isNotEmpty;
+    if (!hasStart && !hasEnd) {
+      return 'Online';
+    }
+
     final startLocationName = _getLocationName(event.locationId);
     if (event.endLocationId != null && event.endLocationId!.isNotEmpty) {
       final endLocationName = _getLocationName(event.endLocationId!);
@@ -180,6 +220,7 @@ class _AllEventsScreenState extends State<AllEventsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final tabWidth = MediaQuery.of(context).size.width / 4;
     return Scaffold(
       backgroundColor: Constants.blackColor,
       appBar: AppBar(
@@ -187,23 +228,27 @@ class _AllEventsScreenState extends State<AllEventsScreen>
         title: const Text('All Events'),
         bottom: TabBar(
           controller: _tabController,
+          isScrollable: false,
           indicatorColor: Constants.redColor,
           onTap: (index) {
             // Handle tab tap directly here for immediate response
-            final newDay = index + 1;
+            if (index < 3) {
+              final newDay = index + 1;
 
-            if (_selectedDay != newDay) {
-              setState(() {
-                _selectedDay = newDay;
-              });
-
-              _filterEvents();
+              if (_selectedDay != newDay) {
+                setState(() {
+                  _selectedDay = newDay;
+                });
+              }
             }
+
+            _filterEvents();
           },
-          tabs: const [
-            Tab(text: 'Day 1'),
-            Tab(text: 'Day 2'),
-            Tab(text: 'Day 3'),
+          tabs: [
+            SizedBox(width: tabWidth, child: const Tab(text: 'Day 1')),
+            SizedBox(width: tabWidth, child: const Tab(text: 'Day 2')),
+            SizedBox(width: tabWidth, child: const Tab(text: 'Day 3')),
+            SizedBox(width: tabWidth, child: const Tab(text: 'Online')),
           ],
         ),
       ),
@@ -224,6 +269,30 @@ class _AllEventsScreenState extends State<AllEventsScreen>
   }
 
   Widget _buildNoEventsMessage() {
+    if (_isOnlineTab) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.wifi_off,
+              color: Constants.creamColor,
+              size: 48,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'No online events',
+              style: TextStyle(
+                color: Constants.creamColor,
+                fontSize: 18,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -249,6 +318,7 @@ class _AllEventsScreenState extends State<AllEventsScreen>
 
   Widget _buildEventCard(Event event) {
     final locationName = _getLocationDisplayName(event);
+    final isOnline = locationName == 'Online';
 
     return GestureDetector(
       onTap: () {
@@ -338,11 +408,17 @@ class _AllEventsScreenState extends State<AllEventsScreen>
                     ),
                   Row(
                     children: [
-                      Icon(Icons.location_on, color: event.txtcolor, size: 16),
+                      Icon(
+                        isOnline ? Icons.wifi : Icons.location_on,
+                        color: event.txtcolor,
+                        size: 16,
+                      ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          '$locationName${event.roomNumber.isNotEmpty ? ' - Room ${event.roomNumber}' : ''}',
+                          isOnline
+                              ? 'Online'
+                              : '$locationName${event.roomNumber.isNotEmpty ? ' - Room ${event.roomNumber}' : ''}',
                           style: TextStyle(
                             color: event.txtcolor,
                             fontWeight: FontWeight.w500,
