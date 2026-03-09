@@ -149,11 +149,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     Icons.access_time,
                     event.time,
                   ),
-                  if (event.hasRegistration)
-                    _buildInfoRow(
-                      Icons.app_registration,
-                      'Registration available',
-                    ),
 
                   const SizedBox(height: 24),
 

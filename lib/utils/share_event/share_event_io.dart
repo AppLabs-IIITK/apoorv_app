@@ -12,6 +12,7 @@ String _buildShareText(Event event, String locationName) {
   final where =
       '$locationName${event.roomNumber.isNotEmpty ? ' - Room ${event.roomNumber}' : ''}';
   final desc = (event.description ?? '').trim();
+  final regLink = (event.registrationLink ?? '').trim();
 
   return <String>[
     event.title.trim(),
@@ -19,6 +20,8 @@ String _buildShareText(Event event, String locationName) {
     where,
     if (desc.isNotEmpty) '',
     if (desc.isNotEmpty) desc,
+    if (regLink.isNotEmpty) '',
+    if (regLink.isNotEmpty) 'Register: $regLink',
   ].join('\n');
 }
 
