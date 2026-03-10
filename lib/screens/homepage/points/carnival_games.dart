@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../constants.dart';
+import '../../../providers/app_config_provider.dart';
 
 class CarnivalGamesScreen extends StatelessWidget {
   static const routeName = '/carnival-games';
@@ -9,7 +11,12 @@ class CarnivalGamesScreen extends StatelessWidget {
   const CarnivalGamesScreen({super.key});
 
   Future<void> _openCarnivalGames(BuildContext context) async {
-    final Uri url = Uri.parse('https://apoorv.fun/home.php');
+    const fallbackUrl = 'https://apoorv.fun/home.php';
+    final appConfigUrl =
+        context.read<AppConfigProvider>().carnivalGamesUrl.trim();
+    final launchUrlString =
+        appConfigUrl.isNotEmpty ? appConfigUrl : fallbackUrl;
+    final Uri url = Uri.parse(launchUrlString);
 
     try {
       bool launched = false;

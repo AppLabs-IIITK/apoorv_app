@@ -290,9 +290,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                           if (context.mounted) {
                                             showSnackbarOnScreen(
                                               context,
-                                              (_isFromCollege && _initialPoints > 0)
-                                                  ? "Onboarding complete. $_initialPoints coins awarded for college user"
-                                                  : "Onboarding complete",
+                                              "Onboarding complete",
                                             );
                                             Navigator.of(context)
                                                 .restorablePushReplacementNamed(

@@ -10,6 +10,7 @@ class AppConfigProvider extends ChangeNotifier {
   List<String> _shopkeeperEmails = [];
   String _mode = 'production';
   String _apiMode = 'cloud_functions';
+  String _carnivalGamesUrl = '';
   bool _isLoaded = false;
   bool _isLoading = false;
 
@@ -17,6 +18,7 @@ class AppConfigProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String get mode => _mode;
   String get apiMode => _apiMode;
+  String get carnivalGamesUrl => _carnivalGamesUrl;
 
   /// Returns true if the currently logged-in user's email is in adminEmails.
   bool get isAdmin {
@@ -75,11 +77,13 @@ class AppConfigProvider extends ChangeNotifier {
         _shopkeeperEmails = _normalizeEmails(data['shopkeeperEmails']);
         _mode = (data['mode'] as String?) ?? 'production';
         _apiMode = (data['apiMode'] as String?) ?? 'cloud_functions';
+        _carnivalGamesUrl = (data['carnivalGamesUrl'] as String?)?.trim() ?? '';
       } else {
         print('AppConfig: app_config/global not found in Firestore.');
         _adminEmails = [];
         _subAdminEmails = [];
         _shopkeeperEmails = [];
+        _carnivalGamesUrl = '';
       }
 
       _isLoaded = true;
@@ -88,6 +92,7 @@ class AppConfigProvider extends ChangeNotifier {
       _adminEmails = [];
       _subAdminEmails = [];
       _shopkeeperEmails = [];
+      _carnivalGamesUrl = '';
       _isLoaded = true;
     } finally {
       _isLoading = false;
@@ -102,6 +107,7 @@ class AppConfigProvider extends ChangeNotifier {
     _shopkeeperEmails = [];
     _mode = 'production';
     _apiMode = 'cloud_functions';
+    _carnivalGamesUrl = '';
     _isLoaded = false;
     _isLoading = false;
     notifyListeners();
