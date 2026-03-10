@@ -1,17 +1,13 @@
 import 'dart:async';
 
-import 'package:apoorv_app/providers/app_config_provider.dart';
 import 'package:apoorv_app/providers/user_info_provider.dart';
-import 'package:apoorv_app/screens/homepage/Profile/manage_shopkeepers.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../constants.dart';
 import '../../../widgets/dialog.dart';
 import '../../../widgets/signup-flow/logout.dart';
 import '../../../widgets/spinning_apoorv.dart';
-import '../Transactions/inspect_transactions.dart';
 
 class Profile2Screen extends StatefulWidget {
   static const routeName = '/profile-2';
@@ -23,28 +19,13 @@ class Profile2Screen extends StatefulWidget {
 
 class _Profile2ScreenState extends State<Profile2Screen> {
   Future<Map<String, dynamic>>? _myFuture;
-  // Timer? timer;
 
   @override
   void initState() {
     super.initState();
-    _updateProfileData(); // Call the function to initially fetch and update profile data
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      context.read<UserProvider>().ensureShopkeeperModeLoaded();
-    });
-    // timer = Timer.periodic(const Duration(seconds: 10), (timer) {
-    //   _updateProfileData(); // Call the function to fetch and update profile data every 10 seconds
-    // });
+    _updateProfileData();
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-    // timer?.cancel();
-  }
-
-  // Function to fetch and update profile data
   Future<void> _updateProfileData() async {
     setState(() {
       _myFuture =
@@ -98,51 +79,14 @@ class _Profile2ScreenState extends State<Profile2Screen> {
                 if (snapshot.data['success']) {
                   Provider.of<UserProvider>(ctx);
                   var providerContext = ctx.read<UserProvider>();
-                  final config = ctx.watch<AppConfigProvider>();
-                  final useShopkeeperPoints = providerContext.isShopkeeper &&
-                      providerContext.shopkeeperModeEnabled;
-                  final displayPoints = useShopkeeperPoints
-                      ? providerContext.shopPoints
-                      : providerContext.points;
-                  final displayLabel =
-                      useShopkeeperPoints ? "Shop Coins" : "Apoorv Coins";
 
                   return Scaffold(
-                    floatingActionButton: config.canManageContent
-                        ? Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              FloatingActionButton.small(
-                                heroTag: null,
-                                tooltip: 'Manage Shop Keepers',
-                                onPressed: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          const ManageShopkeepersScreen(),
-                                    ),
-                                  );
-                                },
-                                child: const Icon(Icons.storefront_outlined),
-                              ),
-                              const SizedBox(height: 10),
-                              FloatingActionButton.small(
-                                heroTag: null,
-                                tooltip: 'Refresh Profile',
-                                onPressed: () => _updateProfileData(),
-                                child: const Icon(Icons.refresh_rounded),
-                              ),
-                            ],
-                          )
-                        : FloatingActionButton(
-                            heroTag: null,
-                            onPressed: () => _updateProfileData(),
-                            child: const Icon(Icons.refresh_rounded),
-                          ),
+                    floatingActionButton: FloatingActionButton(
+                      heroTag: null,
+                      onPressed: () => _updateProfileData(),
+                      child: const Icon(Icons.refresh_rounded),
+                    ),
                     body: Container(
-                      // height: MediaQuery.of(context).size.height -
-                      //     kBottomNavigationBarHeight,
                       decoration: const BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
@@ -154,292 +98,174 @@ class _Profile2ScreenState extends State<Profile2Screen> {
                         ),
                       ),
                       child: SafeArea(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal:
-                                      MediaQuery.of(ctx).size.width * 0.05),
-                              child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          InkWell(
-                                            onTap: () {
-                                              Navigator.of(context).push(
-                                                MaterialPageRoute(
-                                                  builder: (_) =>
-                                                      InspectTransactionsScreen(
-                                                    uid: providerContext.uid,
-                                                    name: providerContext.userName,
-                                                    email: providerContext.userEmail,
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                            child: ClipRRect(
-                                              borderRadius: BorderRadius.circular(
-                                                  MediaQuery.of(context)
-                                                          .size
-                                                          .width *
-                                                      0.33 /
-                                                      2),
-                                              child: (providerContext
-                                                              .profilePhotoUrl !=
-                                                          null &&
-                                                      providerContext
-                                                          .profilePhotoUrl!
-                                                          .isNotEmpty)
-                                                  ? Image.network(
-                                                      providerContext
-                                                          .profilePhotoUrl!,
-                                                      height: MediaQuery.of(
-                                                                  context)
-                                                              .size
-                                                              .width *
-                                                          0.33,
-                                                      width: MediaQuery.of(context)
-                                                              .size
-                                                              .width *
-                                                          0.33,
-                                                      fit: BoxFit.cover,
-                                                      errorBuilder: (context,
-                                                          error, stackTrace) {
-                                                        return Container(
-                                                          height: MediaQuery.of(
-                                                                      context)
-                                                                  .size
-                                                                  .width *
-                                                              0.33,
-                                                          width: MediaQuery.of(
-                                                                      context)
-                                                                  .size
-                                                                  .width *
-                                                              0.33,
-                                                          color: Constants
-                                                              .yellowColor,
-                                                          alignment:
-                                                              Alignment.center,
-                                                          child: Text(
-                                                            providerContext
-                                                                    .userName
-                                                                    .isNotEmpty
-                                                                ? providerContext
-                                                                    .userName[0]
-                                                                    .toUpperCase()
-                                                                : '?',
-                                                            style:
-                                                                const TextStyle(
-                                                              fontSize: 48,
-                                                              fontWeight:
-                                                                  FontWeight.bold,
-                                                              color: Constants
-                                                                  .blackColor,
-                                                            ),
-                                                          ),
-                                                        );
-                                                      },
-                                                    )
-                                                  : Container(
-                                                      height: MediaQuery.of(
-                                                                  context)
-                                                              .size
-                                                              .width *
-                                                          0.33,
-                                                      width: MediaQuery.of(context)
-                                                              .size
-                                                              .width *
-                                                          0.33,
-                                                      color:
-                                                          Constants.yellowColor,
-                                                      alignment: Alignment.center,
-                                                      child: Text(
-                                                        providerContext
-                                                                .userName
-                                                                .isNotEmpty
-                                                            ? providerContext
-                                                                .userName[0]
-                                                                .toUpperCase()
-                                                            : '?',
-                                                        style: const TextStyle(
-                                                          fontSize: 48,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          color:
-                                                              Constants.blackColor,
-                                                        ),
-                                                      ),
-                                                    ),
-                                            ),
-                                          ),
-                                          SizedBox(
-                                            width:
-                                                MediaQuery.of(ctx).size.width *
-                                                    0.45,
-                                            child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceEvenly,
-                                              children: [
-                                                FilledButton(
-                                                  onPressed: () {},
-                                                  style: ButtonStyle(
-                                                    backgroundColor:
-                                                        MaterialStateProperty
-                                                            .all<Color>(Constants
-                                                                .yellowColor),
-                                                    foregroundColor:
-                                                        MaterialStateProperty
-                                                            .all<Color>(
-                                                                Colors.black),
-                                                  ),
-                                                  child: SizedBox(
-                                                    width: double.infinity,
-                                                    child: Text(
-                                                      "$displayLabel: $displayPoints",
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                      style: const TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.bold),
-                                                    ),
-                                                  ),
-                                                ),
-                                                Constants.gap,
-                                                if (providerContext.isShopkeeper) ...[
-                                                  Container(
-                                                    padding: const EdgeInsets.symmetric(
-                                                        horizontal: 8, vertical: 6),
-                                                    decoration: BoxDecoration(
-                                                      color: Constants.blackColor,
-                                                      borderRadius:
-                                                          BorderRadius.circular(12),
-                                                      border: Border.all(
-                                                        color: Constants.yellowColor,
-                                                        width: 1,
-                                                      ),
-                                                    ),
-                                                    child: Row(
-                                                      children: [
-                                                        const Expanded(
-                                                          child: Text(
-                                                            "Shopkeeper mode",
-                                                            style: TextStyle(
-                                                              color: Colors.white,
-                                                              fontSize: 12,
-                                                              fontWeight:
-                                                                  FontWeight.w600,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        Switch(
-                                                          value: providerContext
-                                                              .shopkeeperModeEnabled,
-                                                          activeColor:
-                                                              Constants.yellowColor,
-                                                          onChanged: (val) {
-                                                            providerContext
-                                                                .setShopkeeperModeEnabled(
-                                                                    val);
-                                                          },
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  Constants.gap,
-                                                ],
-                                                const LogoutButton(),
-                                              ],
-                                            ),
-                                          )
-                                        ]),
-                                    Constants.gap,
-                                    Text(providerContext.userName,
-                                        style: const TextStyle(
-                                          color: Constants.blackColor,
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.bold,
-                                        )),
-                                    const Text("Email",
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: Constants.blackColor,
-                                            fontSize: 16)),
-                                    Text(providerContext.userEmail,
-                                        style: const TextStyle(
-                                            color: Constants.blackColor,
-                                            fontSize: 16)),
-                                    const Text("Phone",
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                            color: Constants.blackColor)),
-                                    Text(providerContext.userPhNo,
-                                        style: const TextStyle(
-                                            color: Constants.blackColor,
-                                            fontSize: 16)),
-                                    if (providerContext.fromCollege &&
-                                        (providerContext.userRollNo ?? '')
-                                            .trim()
-                                            .isNotEmpty) ...[
-                                      const Text('Roll No',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16,
-                                              color: Constants.blackColor)),
-                                      Text(providerContext.userRollNo!,
-                                          style: const TextStyle(
-                                            color: Constants.blackColor,
-                                            fontSize: 16,
-                                          )),
-                                    ],
-                                    const Text('College',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                            color: Constants.blackColor)),
-                                    Text(providerContext.userCollegeName,
-                                        style: const TextStyle(
-                                            color: Constants.blackColor,
-                                            fontSize: 16)),
-                                    if (!providerContext.fromCollege) ...[
-                                      const Text('',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16,
-                                              color: Constants.blackColor)),
-                                      const Text('',
-                                          style: TextStyle(
-                                              color: Constants.blackColor,
-                                              fontSize: 16)),
-                                    ],
-                                  ]),
-                            ),
-                            Constants.gap,
-                            Expanded(
-                              child: Container(
-                                // width: double.infinity,
-                                alignment: Alignment.center,
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: Column(
+                            children: [
+                              // Top section with profile info
+                              Padding(
                                 padding: EdgeInsets.all(
                                     MediaQuery.of(ctx).size.width * 0.05),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    const SizedBox(height: 20),
+                                    // Profile Picture - smaller size
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(60),
+                                      child: (providerContext.profilePhotoUrl !=
+                                                  null &&
+                                              providerContext
+                                                  .profilePhotoUrl!.isNotEmpty)
+                                          ? Image.network(
+                                              providerContext.profilePhotoUrl!,
+                                              height: 120,
+                                              width: 120,
+                                              fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                return Container(
+                                                  height: 120,
+                                                  width: 120,
+                                                  color: Constants.yellowColor,
+                                                  alignment: Alignment.center,
+                                                  child: Text(
+                                                    providerContext
+                                                            .userName.isNotEmpty
+                                                        ? providerContext
+                                                            .userName[0]
+                                                            .toUpperCase()
+                                                        : '?',
+                                                    style: const TextStyle(
+                                                      fontSize: 48,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Constants.blackColor,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            )
+                                          : Container(
+                                              height: 120,
+                                              width: 120,
+                                              color: Constants.yellowColor,
+                                              alignment: Alignment.center,
+                                              child: Text(
+                                                providerContext
+                                                        .userName.isNotEmpty
+                                                    ? providerContext.userName[0]
+                                                        .toUpperCase()
+                                                    : '?',
+                                                style: const TextStyle(
+                                                  fontSize: 48,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Constants.blackColor,
+                                                ),
+                                              ),
+                                            ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    // Name
+                                    Text(
+                                      providerContext.userName,
+                                      style: const TextStyle(
+                                        color: Constants.blackColor,
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    // College
+                                    Text(
+                                      providerContext.userCollegeName,
+                                      style: const TextStyle(
+                                        color: Constants.blackColor,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              // Bottom section with details
+                              Container(
+                                width: double.infinity,
                                 decoration: const BoxDecoration(
+                                  color: Constants.blackColor,
                                   borderRadius: BorderRadius.only(
                                     topLeft: Radius.circular(24),
                                     topRight: Radius.circular(24),
                                   ),
-                                  color: Constants.blackColor,
                                 ),
-                                child: QrImageView(
-                                  data: providerContext.uid,
-                                  backgroundColor: Constants.whiteColor,
-                                  // size: MediaQuery.of(context).size.width * 0.75,
+                                padding: EdgeInsets.all(
+                                    MediaQuery.of(context).size.width * 0.05),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      "PROFILE DETAILS",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 19,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+
+                                    // Email
+                                    _buildDetailItem(
+                                      "Email",
+                                      providerContext.userEmail,
+                                      Icons.email_outlined,
+                                    ),
+
+                                    const SizedBox(height: 16),
+
+                                    // Phone
+                                    _buildDetailItem(
+                                      "Phone",
+                                      providerContext.userPhNo,
+                                      Icons.phone_outlined,
+                                    ),
+
+                                    // Roll Number (if applicable)
+                                    if (providerContext.fromCollege &&
+                                        (providerContext.userRollNo ?? '')
+                                            .trim()
+                                            .isNotEmpty) ...[
+                                      const SizedBox(height: 16),
+                                      _buildDetailItem(
+                                        "Roll Number",
+                                        providerContext.userRollNo!,
+                                        Icons.badge_outlined,
+                                      ),
+                                    ],
+
+                                    const SizedBox(height: 16),
+
+                                    // College
+                                    _buildDetailItem(
+                                      "College",
+                                      providerContext.userCollegeName,
+                                      Icons.school_outlined,
+                                    ),
+
+                                    const SizedBox(height: 32),
+
+                                    // Logout Button
+                                    const SizedBox(
+                                      width: double.infinity,
+                                      child: LogoutButton(),
+                                    ),
+
+                                    const SizedBox(height: 20),
+                                  ],
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -452,5 +278,49 @@ class _Profile2ScreenState extends State<Profile2Screen> {
               }
           }
         });
+  }
+
+  Widget _buildDetailItem(String label, String value, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[900],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: Constants.yellowColor,
+            size: 24,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -2,8 +2,9 @@ import 'package:apoorv_app/screens/homepage/Maps/maps.dart';
 import 'package:apoorv_app/screens/homepage/Profile/profile_2.dart';
 
 import '../../constants.dart';
-import 'points/points.dart';
+import 'points/carnival_games.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import './feed/feed.dart';
 
 class HomePage extends StatefulWidget {
@@ -29,7 +30,7 @@ class _HomePageState extends State<HomePage> {
     screens = [
       const FeedScreen(),
       const MapsScreen(),
-      PointsScreen(stream: st.stream),
+      const CarnivalGamesScreen(),
       const Profile2Screen(),
     ];
     popScreen(context);
@@ -94,9 +95,9 @@ class _HomePageState extends State<HomePage> {
               label: 'Maps',
             ),
             NavigationDestination(
-              selectedIcon: Icon(Icons.stars),
-              icon: Icon(Icons.stars_outlined),
-              label: 'Points',
+              selectedIcon: Icon(kIsWeb ? Icons.sports_esports : Icons.games),
+              icon: Icon(kIsWeb ? Icons.sports_esports_outlined : Icons.games_outlined),
+              label: 'Games',
             ),
             NavigationDestination(
               selectedIcon: Icon(Icons.account_circle),

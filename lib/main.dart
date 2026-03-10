@@ -31,6 +31,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'screens/homepage/points/leaderboard.dart';
+import 'screens/homepage/points/carnival_games.dart';
 
 const supabaseUrl = 'https://ttmoltlyckvmfvntgetz.supabase.co';
 const supabaseKey =
@@ -153,6 +154,7 @@ class MyApp extends StatelessWidget {
           PointsScreen.routeName: (context) => const PointsScreen(),
           Profile2Screen.routeName: (context) => const Profile2Screen(),
           Leaderboard.routeName: (context) => const Leaderboard(),
+          CarnivalGamesScreen.routeName: (context) => const CarnivalGamesScreen(),
           LetsGoPage.routeName: (context) => const LetsGoPage(),
           Payment.routeName: (context) => const Payment(),
           PaymentSuccess.routeName: (context) => const PaymentSuccess(),

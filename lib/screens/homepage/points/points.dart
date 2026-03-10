@@ -1,21 +1,14 @@
 import 'dart:async';
 
-import 'package:apoorv_app/api.dart';
-import 'package:apoorv_app/providers/receiver_provider.dart';
 import 'package:apoorv_app/providers/user_info_provider.dart';
-import 'package:apoorv_app/screens/homepage/Transactions/payment.dart';
-import 'package:apoorv_app/screens/homepage/points/all_transactions.dart';
-import 'package:apoorv_app/widgets/transaction_details_modal.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import '../../../widgets/dialog.dart';
-import '../../../widgets/points-widget/qr/generate_qr.dart';
-import '../../../widgets/points-widget/qr/scan_qr.dart';
 import 'package:flutter/material.dart';
 
 import '../../../constants.dart';
 import '../../../widgets/spinning_apoorv.dart';
 import 'leaderboard.dart';
+import 'carnival_games.dart';
 
 StreamController<bool> st = StreamController<bool>.broadcast();
 
@@ -31,21 +24,10 @@ class PointsScreen extends StatefulWidget {
 class _PointsScreenState extends State<PointsScreen> {
   Future<Map<String, dynamic>>? myFuture;
 
-  final searchController = TextEditingController();
-  bool searchFocus = false;
-  FocusNode searchFocusNode = FocusNode();
-
-  Map<String, dynamic>? _searchResults = {
-    'success': false,
-    'results': null,
-  };
-
-  Timer? timer;
-
   @override
   void initState() {
     super.initState();
-    getTransactionHistory();
+    getUserInfo();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<UserProvider>().ensureShopkeeperModeLoaded();
@@ -53,62 +35,20 @@ class _PointsScreenState extends State<PointsScreen> {
     if (widget.stream != null) {
       widget.stream!.listen((event) {
         if (event) {
-          getTransactionHistory();
+          getUserInfo();
         }
       });
     }
   }
 
-  @override
-  void dispose() {
-    searchController.dispose();
-    timer?.cancel();
-    super.dispose();
-  }
-
-  Future<void> getTransactionHistory() async {
+  Future<void> getUserInfo() async {
     Provider.of<UserProvider>(context, listen: false).getUserInfo();
     if (context.mounted) {
       setState(() {
-        myFuture = Provider.of<UserProvider>(context, listen: false)
-            .getLatest2Transactions();
+        myFuture = Future.value({'success': true});
       });
     }
   }
-
-  void _showTransactionDetails(Map<String, dynamic> txn) {
-    final fromUid = txn['from']?.toString() ?? '';
-    final toUid = txn['to']?.toString() ?? '';
-    final fromName = txn['fromName']?.toString() ?? 'Unknown';
-    final toName = txn['toName']?.toString() ?? 'Unknown';
-    final fromEmail = txn['fromEmail']?.toString() ?? '';
-    final toEmail = txn['toEmail']?.toString() ?? '';
-    final points = txn['transactionValue'] as int? ?? 0;
-    final formattedTime = txn['formattedTime']?.toString() ?? '';
-
-    final myUid = FirebaseAuth.instance.currentUser?.uid;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color.fromRGBO(18, 18, 18, 1),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => TransactionDetailsModal(
-        fromUid: fromUid,
-        toUid: toUid,
-        fromName: fromName,
-        toName: toName,
-        fromEmail: fromEmail,
-        toEmail: toEmail,
-        points: points,
-        formattedTime: formattedTime,
-        myUid: myUid,
-      ),
-    );
-  }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -134,7 +74,7 @@ class _PointsScreenState extends State<PointsScreen> {
                     () {
                       if (!context.mounted) return;
                       dialogBuilder(context, message: message, function: () {
-                        getTransactionHistory();
+                        getUserInfo();
                         Navigator.of(context).pop();
                       });
                     });
@@ -143,357 +83,176 @@ class _PointsScreenState extends State<PointsScreen> {
               } else if (snapshot.hasData) {
                 if (snapshot.data['success']) {
                   Provider.of<UserProvider>(context);
-                  var providerContext = context.read<UserProvider>();
-                  final useShopkeeperPoints = providerContext.isShopkeeper &&
-                      providerContext.shopkeeperModeEnabled;
-                  final displayPoints = useShopkeeperPoints
-                      ? providerContext.shopPoints
-                      : providerContext.points;
-                  final displayLabel =
-                      useShopkeeperPoints ? "Shop Coins" : "Points";
 
-                  return GestureDetector(
-                    onTap: () {
-                      FocusManager.instance.primaryFocus?.unfocus();
-                      setState(() {
-                        searchFocus = false;
-                        _searchResults!['results'] = null;
-                      });
-                    },
-                    child: Scaffold(
-                      resizeToAvoidBottomInset: false,
-                      floatingActionButton: FloatingActionButton(
-                        heroTag: null,
-                        onPressed: () => getTransactionHistory(),
-                        child: const Icon(Icons.refresh_rounded),
-                      ),
-                      body: Container(
-                        // height: MediaQuery.of(context).size.height -
-                        //     kBottomNavigationBarHeight,
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Constants.gradientHigh,
-                              Constants.gradientLow
-                            ],
-                            begin: Alignment.topCenter,
-                            end: Alignment.center,
-                          ),
+                  return Scaffold(
+                    floatingActionButton: FloatingActionButton(
+                      heroTag: null,
+                      onPressed: () => getUserInfo(),
+                      child: const Icon(Icons.refresh_rounded),
+                    ),
+                    body: Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Constants.gradientHigh,
+                            Constants.gradientLow
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.center,
                         ),
-                        // color: Constants.yellowColor,
-                        child: SafeArea(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Stack(
-                                children: [
-                                  if (searchFocus)
-                                    Container(
-                                        margin: EdgeInsets.symmetric(
-                                            horizontal: MediaQuery.of(context)
-                                                    .size
-                                                    .width *
-                                                0.033),
+                      ),
+                      child: SafeArea(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Points Display - REMOVED
+                            const SizedBox(height: 40),
+                            Constants.gap,
+                            // Bottom Section
+                            Flexible(
+                              child: Container(
+                                alignment: Alignment.center,
+                                decoration: const BoxDecoration(
+                                  color: Constants.blackColor,
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(24),
+                                    topRight: Radius.circular(24),
+                                  ),
+                                ),
+                                padding: EdgeInsets.all(
+                                    MediaQuery.of(context).size.width * 0.05),
+                                child: SingleChildScrollView(
+                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      // Carnival Games Card
+                                      Container(
+                                        width: MediaQuery.of(context).size.width,
+                                        padding: const EdgeInsets.all(20),
                                         decoration: BoxDecoration(
-                                          color: Constants.blackColor,
-                                          borderRadius:
-                                              BorderRadius.circular(30),
+                                          gradient: const LinearGradient(
+                                            colors: [
+                                              Constants.gradientHigh,
+                                              Constants.gradientLow,
+                                            ],
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                          ),
+                                          borderRadius: BorderRadius.circular(16),
                                         ),
-                                        padding:
-                                            const EdgeInsets.only(bottom: 16),
-                                        width: double.infinity,
                                         child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            const SizedBox(
-                                              height: kToolbarHeight,
+                                            const Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.games,
+                                                  color: Constants.blackColor,
+                                                  size: 28,
+                                                ),
+                                                SizedBox(width: 12),
+                                                Text(
+                                                  "🎯 Carnival Games",
+                                                  style: TextStyle(
+                                                    fontSize: 20,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Constants.blackColor,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            const Text(
+                                              "Step into the Apoorv Carnival and play exciting mini games! Win prizes and compete with friends.",
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                color: Constants.blackColor,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            SizedBox(
                                               width: double.infinity,
-                                            ),
-                                            if (_searchResults == null)
-                                              const Text('Some error occured'),
-                                            if (_searchResults != null &&
-                                                _searchResults!['results'] ==
-                                                    null)
-                                              const Text(
-                                                  "Enter name to search for"),
-                                            if (_searchResults != null &&
-                                                _searchResults!['results'] !=
-                                                    null &&
-                                                _searchResults!['results']
-                                                    .isEmpty)
-                                              const Text("No users found"),
-                                            if (_searchResults != null &&
-                                                _searchResults!['results'] !=
-                                                    null &&
-                                                _searchResults!['results']
-                                                    ?.isNotEmpty)
-                                              ListView.builder(
-                                                shrinkWrap: true,
-                                                itemBuilder: (context, i) =>
-                                                    ListTile(
-                                                  title: Text(
-                                                      _searchResults!['results']
-                                                          [i]['fullName']),
-                                                  subtitle: Text(
-                                                      _searchResults!['results']
-                                                          [i]['email']),
-                                                  trailing: Text(
-                                                      '${_searchResults!['results'][i]['points']} pts'),
-                                                  onTap: () {
-                                                    final user = _searchResults!['results'][i];
-                                                    Provider.of<ReceiverProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .setReceiverDataFromSearch(user);
-                                                    Navigator.of(context)
-                                                        .pushNamed(Payment.routeName)
-                                                        .then((value) {
-                                                      searchController.clear();
-                                                      FocusManager
-                                                          .instance.primaryFocus
-                                                          ?.unfocus();
-                                                      _searchResults![
-                                                          'results'] = null;
-                                                      setState(() {
-                                                        searchFocus = false;
-                                                      });
-                                                    });
-                                                  },
-                                                ),
-                                                itemCount:
-                                                    _searchResults!['results']
-                                                        .length,
-                                              )
-                                          ],
-                                        )),
-                                  GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        searchFocus = true;
-                                        searchFocusNode.requestFocus();
-                                      });
-                                    },
-                                    child: Container(
-                                      margin: EdgeInsets.symmetric(
-                                          horizontal: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.033),
-                                      decoration: BoxDecoration(
-                                        color: Constants.blackColor,
-                                        // border: Border.all(
-                                        //   color: Colors.white,
-                                        // ),
-                                        borderRadius: BorderRadius.circular(30),
-                                      ),
-                                      child: AbsorbPointer(
-                                        child: TextField(
-                                          autofocus: searchFocus,
-                                          decoration: const InputDecoration(
-                                              border: InputBorder.none,
-                                              hintText: "Search Someone",
-                                              prefixIcon: Icon(
-                                                Icons.search,
-                                                size: 30,
-                                              )),
-                                          style: const TextStyle(
-                                              color: Colors.white),
-                                          controller: searchController,
-                                          focusNode: searchFocusNode,
-                                          onChanged: (value) {
-                                            if (value.isNotEmpty &&
-                                                value.trim().isNotEmpty) {
-                                              if (timer != null) {
-                                                timer!.cancel();
-                                                timer = null;
-                                              }
-                                              timer = Timer(
-                                                const Duration(seconds: 1),
-                                                () async {
-                                                  var res = await APICalls()
-                                                      .getUsersSearchList(
-                                                    searchController.text
-                                                        .trim(),
-                                                    context
-                                                        .read<UserProvider>()
-                                                        .idToken,
+                                              child: ElevatedButton(
+                                                onPressed: () {
+                                                  Navigator.pushNamed(
+                                                    context,
+                                                    CarnivalGamesScreen.routeName,
                                                   );
-
-                                                  setState(() {
-                                                    if (res['success']) {
-                                                      _searchResults![
-                                                          'success'] = true;
-                                                      _searchResults![
-                                                              'results'] =
-                                                          res['results'];
-                                                    } else {
-                                                      _searchResults = null;
-                                                    }
-                                                  });
                                                 },
-                                              );
-                                            } else {
-                                              if (timer != null) {
-                                                timer!.cancel();
-                                              }
-                                              setState(() {
-                                                _searchResults!['results'] =
-                                                    null;
-                                              });
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              // Constants.gap,
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    displayPoints.toString(),
-                                    style: const TextStyle(
-                                      fontSize: 72,
-                                      fontWeight: FontWeight.bold,
-                                      color: Constants.blackColor,
-                                    ),
-                                  ),
-                                  Text(
-                                    displayLabel,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 36,
-                                      color: Constants.blackColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Constants.gap,
-                              Flexible(
-                                child: Container(
-                                  // Container(
-                                  alignment: Alignment.center,
-                                  decoration: const BoxDecoration(
-                                    color: Constants.blackColor,
-                                    borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(24),
-                                      topRight: Radius.circular(24),
-                                    ),
-                                  ),
-                                  padding: EdgeInsets.all(
-                                      MediaQuery.of(context).size.width * 0.05),
-                                  child: SingleChildScrollView(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: [
-                                        const Text(
-                                          "LAST TRANSACTIONS",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 19,
-                                          ),
-                                        ),
-                                        if (providerContext
-                                            .transactions.isEmpty) ...[
-                                          Constants.gap,
-                                          const Center(
-                                            child: Text(
-                                                "No transactions to show here"),
-                                          ),
-                                          // Constants.gap,
-                                        ],
-                                        if (providerContext
-                                            .transactions.isNotEmpty)
-                                          ...List.generate(
-                                            snapshot.data['transactions'].length,
-                                            (index) => GestureDetector(
-                                              onTap: () => _showTransactionDetails(
-                                                providerContext.transactionData[index],
-                                              ),
-                                              child: snapshot.data['transactions'][index],
-                                            ),
-                                          ),
-                                        // Constants.gap,
-                                        Align(
-                                          alignment: Alignment.centerRight,
-                                          child: TextButton(
-                                            onPressed: () {
-                                              Navigator.of(context)
-                                                  .restorablePushNamed(
-                                                      AllTransactions
-                                                          .routeName);
-                                            },
-                                            style: const ButtonStyle(),
-                                            child: const Text(
-                                              'View More ->',
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              // textAlign: TextAlign.end,
-                                            ),
-                                          ),
-                                        ),
-                                        // Constants.gap,
-                                        const Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [GenerateQR(), ScanQR()],
-                                        ),
-                                        const SizedBox(
-                                          height: 20,
-                                        ),
-                                        SizedBox(
-                                          width:
-                                              MediaQuery.of(context).size.width,
-                                          child: ElevatedButton(
-                                            onPressed: () {
-                                              Navigator.pushNamed(
-                                                context,
-                                                Leaderboard.routeName,
-                                              );
-                                            },
-                                            style: ElevatedButton.styleFrom(
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(
-                                                  24,
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Constants.blackColor,
+                                                  foregroundColor: Constants.yellowColor,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(12),
+                                                  ),
+                                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                                ),
+                                                child: const Row(
+                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(Icons.launch, size: 20),
+                                                    SizedBox(width: 8),
+                                                    Text(
+                                                      "Play Carnival Games",
+                                                      style: TextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight: FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
                                               ),
                                             ),
-                                            child: const Text(
-                                              "View Leaderboard",
-                                              style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 24),
+                                      // Leaderboard Button
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width,
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            Navigator.pushNamed(
+                                              context,
+                                              Leaderboard.routeName,
+                                            );
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(24),
                                             ),
+                                            padding: const EdgeInsets.symmetric(vertical: 16),
+                                          ),
+                                          child: const Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Icon(Icons.leaderboard, size: 24),
+                                              SizedBox(width: 12),
+                                              Text(
+                                                "View Leaderboard",
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                        // Constants.gap,
-                                      ],
-                                    ),
+                                      ),
+                                      const SizedBox(height: 20),
+                                    ],
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                        // ),
                       ),
                     ),
                   );
                 } else {
-                  // Future.delayed(
-                  //   Duration.zero,
-                  //   () =>
-                  //       showSnackbarOnScreen(context, snapshot.data['message']),
-                  // );
                   final msg = (snapshot.data['message'] ??
                           snapshot.data['error'] ??
                           'Failed to load')

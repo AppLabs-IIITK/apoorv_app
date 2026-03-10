@@ -1,56 +1,13 @@
 # Apoorv App User Manual (Users)
 
-This guide is for regular users who earn, send, and receive Apoorv Coins (points).
+This guide is for users of the Apoorv App during the festival.
 
-The app has the same 4 main tabs for everyone:
-`Home` (Feed), `Maps`, `Points`, `Profile`.
-Some buttons may appear only for specific roles.
-
-## Key Concepts
-
-### Points (Apoorv Coins)
-- `Points` are the main in-app coins used for transfers between users.
-- Your points increase when someone pays you or when you receive rewards.
-- Your points decrease when you pay someone.
-
-### Shop Coins (Shopkeeper points)
-- You will only see or use `Shop Coins` if your account is enabled as a shopkeeper and you turn on Shopkeeper Mode.
-- Regular users normally use `Points`, not `Shop Coins`.
-
-### Leaderboard
-- The `Leaderboard` ranks users by points.
-- You can tap a person on the leaderboard to open the payment screen and send them points.
-
-### Payments (Point Transfers)
-- A “payment” in this app means transferring points between accounts.
-- You can pay by:
-  - Searching a user in the `Points` tab, or
-  - Scanning their QR code, or
-  - Tapping them from the leaderboard, or
-  - Tapping a person in a transaction’s details view.
-- You cannot pay yourself.
-
-### Inspect (Transparency and Fraud Checks)
-`Inspect` is the app’s transparency screen. It exists to help you (and event staff) review transfer activity and spot unusual patterns.
-
-You can use Inspect to:
-- Check if points were actually sent/received in a dispute
-- See a user’s recent transfer activity and totals
-- Spot suspicious behavior (unexpected spikes, repeated patterns, or mismatched totals)
-- Separate normal transfers from shop-related transactions (when applicable)
-
-### Welcome Bonus (College Users)
-- If you sign in for the first time using a college email account, you receive a welcome bonus of `50` points.
-- Outside-college users do not receive this welcome bonus.
-
-### Inter-College Transfer Rules
-- College users cannot send points to outside-college users.
-- Outside-college users can send points to college users (if they have enough points).
-- If a transfer fails, the app will show a message explaining why.
+The app has 4 main tabs:
+`Home` (Feed), `Maps`, `Games`, `Profile`.
 
 ## Tab 1: Home (Feed)
 
-The Feed is the app’s announcement board.
+The Feed is the app's announcement board.
 - View the latest announcements and updates.
 - Priority announcements may be highlighted more strongly.
 
@@ -85,69 +42,25 @@ The Maps tab shows locations and events.
 - Shows location, day, time, and description (if provided).
 - Use `Share Event` to share the event details.
 
-## Tab 3: Points
+## Tab 3: Games
 
-The Points tab is where you:
-- See your current balance
-- Pay others
-- Show or scan QR codes
-- Check your recent transactions
-- Open the leaderboard
+The Games tab provides access to carnival games.
 
-### Your Balance
-- The top of this screen shows your current `Points` balance.
-- If Shopkeeper Mode is enabled for your account, this label may change to `Shop Coins`.
-
-### Search and Pay
-1. Tap the search bar (`Search Someone`).
-2. Type a name or email.
-3. Tap a user from the results list.
-4. The app opens the `Payment` screen for that person.
-
-### Payment Screen (Send Points)
-Whenever you open `Payment`, you are sending points to the selected person.
-
-What you see:
-- Who you are paying (name + email)
-- An amount box where you enter how many points to send
-- A `Continue` button to confirm
-
-How to pay:
-1. Enter an amount (must be greater than 0).
-2. Tap `Continue`.
-3. If successful, you’ll see a success screen showing the amount and who you paid.
-
-Top-right `Inspect` (View Receiver Log):
-- On the payment screen, tap the top-right `Inspect` button to open `Inspect <Receiver Name>`.
-- Use this for transparency: review the receiver’s transfer activity/totals before you send points, especially if something feels suspicious or you’re resolving a dispute.
-
-### Pay Using QR
-Use the two cards:
-- `SHOW QR CODE`: Shows your QR so someone else can scan and pay you.
-- `SCAN QR CODE`: Opens the scanner so you can scan someone else’s QR and pay them.
-
-### Recent Transactions
-- You will see your most recent transactions on this screen.
-- Tap a transaction to open `Transaction Details`.
-
-Transaction Details:
-- Shows amount, time, and the two participants (`From` and `To`).
-- You can tap the other person’s card to open the payment screen and pay them.
-
-### View More (All Transactions)
-- Tap `View More ->` to open `All Transactions`.
-- Use the toggle at the top to switch:
-  - `My Transactions`
-  - `Global Transactions`
-- Tap any transaction to see details (and optionally pay a participant from the details view).
+### Carnival Games
+- Tap `Play Carnival Games` to open the carnival games portal.
+- The games will open in your browser where you can:
+  - Sign in with your account
+  - Play various mini-games
+  - Compete with other participants
+  - Win prizes and rewards
 
 ### Leaderboard
-- Tap `View Leaderboard` to open the ranking list.
-- Tap a user (not yourself) to open the payment screen for that user.
+- Tap `View Leaderboard` to see the ranking of participants.
+- Check your position and compete with others.
 
 ## Tab 4: Profile
 
-Profile shows your identity and your personal QR code.
+Profile shows your personal information.
 
 ### Your Details
 - Name
@@ -156,15 +69,20 @@ Profile shows your identity and your personal QR code.
 - College
 - Roll No (for college users, if available)
 
-### Your QR Code (Bottom Area)
-- Your QR code is shown on the profile page.
-- Others can scan this code to pay you quickly.
+### Logout
+- Use the logout button to sign out of the app when needed.
 
-### Inspect (Self)
-- Tap your profile picture to open `Inspect <Your Name>`.
-- This is your transaction log view with filters and totals, mainly for transparency and record-keeping.
+## Getting Started
 
-Inspect screen includes:
-- Totals like `Total Received`, `Transfer Sent`, `Net`, `Total Points`, and shop-related totals if relevant
-- Filters like `Sent`, `Received`, `Transfer Sent`, `Shop Sent`, `Shop Received`
-- Sorting by `Date` or `Amount`
+1. **Sign Up/Login**: Use your Google account to sign in.
+2. **Complete Profile**: Fill in your details including college information.
+3. **Explore**: Navigate through the tabs to discover events, play games, and stay updated.
+4. **Participate**: Join carnival games and compete on the leaderboard.
+5. **Stay Updated**: Check the feed regularly for announcements and updates.
+
+## Tips
+
+- **Stay Connected**: Make sure you have a stable internet connection for the best experience.
+- **Check Events**: Use the Maps tab to find events happening around campus.
+- **Play Games**: Visit the Games tab to participate in carnival activities.
+- **Read Announcements**: Keep up with the latest news through the Feed.
