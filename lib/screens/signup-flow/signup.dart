@@ -28,6 +28,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool isProcessing = false;
 
   bool _isFromCollege = true;
+  // ignore: unused_field
   int _initialPoints = 0;
 
   @override
@@ -252,12 +253,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               onPressed: isProcessing
                                   ? null
                                   : () async {
-                                      if (!isProcessing) {
+                                      if (_formKey.currentState!.validate()) {
                                         setState(() {
                                           isProcessing = true;
                                         });
-                                      }
-                                      if (_formKey.currentState!.validate()) {
                                         try {
                                           final user =
                                               FirebaseAuth.instance.currentUser;
@@ -307,6 +306,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                               isProcessing = false;
                                             });
                                           }
+                                        }
+                                      } else {
+                                        if (mounted) {
+                                          setState(() {
+                                            isProcessing = false;
+                                          });
                                         }
                                       }
                                     },
